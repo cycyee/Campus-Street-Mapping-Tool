@@ -73,15 +73,15 @@ struct CXMLReader::SImplementation {
 
 
     bool End() const {
-        return DEntityQueue.empty() && DDataSource->End();
+        return (DEntityQueue.empty() && DDataSource->End());
     };
 
     bool ReadEntity(SXMLEntity &entity, bool skipcdata) {
         //read from source, pass to parser, return the entity
         while(DEntityQueue.empty()) {
             std::vector<char> DataBuffer;
-            if (DDataSource ->Read(DataBuffer, 256)) {
-                XML_Parse(DXMLParser, DataBuffer.data(), DataBuffer.size(), DataBuffer.size() < 256);
+            if (DDataSource ->Read(DataBuffer, 512)) {
+                XML_Parse(DXMLParser, DataBuffer.data(), DataBuffer.size(), DataBuffer.size() < 512);
             }
             else {
                 XML_Parse(DXMLParser, DataBuffer.data(), 0, true);

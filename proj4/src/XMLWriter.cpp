@@ -16,11 +16,11 @@ struct CXMLWriter::SImplementation {
         while(!flushstack.empty()) {
             SXMLEntity entity = flushstack.top();
             temp.push_back('<');
+            temp.push_back('/');
             flushstack.pop();
             for(size_t i = 0; i < entity.DNameData.length(); i++){
                 temp.push_back(entity.DNameData[i]);
             }
-            temp.push_back('/');
             temp.push_back('>');
             DDataSink->Write(temp);
         }
@@ -34,10 +34,33 @@ struct CXMLWriter::SImplementation {
         case SXMLEntity::EType::StartElement: {
             flushstack.push(entity);
             startTag = "<" + entity.DNameData; //starting format
-            for (const auto &attribute : entity.DAttributes) {
-                startTag += " " + attribute.first + "=\"" + attribute.second + "\""; //attribute format
+            for (const auto& attribute : entity.DAttributes) {
+                startTag += " " + attribute.first + "=\"";
+                for (char c : attribute.second) {
+                    switch (c) {
+                        case '&':
+                            startTag += "&amp;";
+                            break;
+                        case '"':
+                            startTag += "&quot;";
+                            break;
+                        case '\'':
+                            startTag += "&apos;";
+                            break;
+                        case '<':
+                            startTag += "&lt;";
+                            break;
+                        case '>':
+                            startTag += "&gt;";
+                            break;
+                        default:
+                            startTag += c;
+                            break;
+                    }
+                }
+                startTag += "\""; // attribute format
             }
-            startTag += ">"; //starting elements only have <> as casing
+            startTag += ">";
             for(size_t i = 0; i < startTag.length(); i++) {//pushing into NameData so I can write, Write only takes chars
                 NameData.push_back(startTag[i]);
             }
