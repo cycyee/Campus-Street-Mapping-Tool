@@ -23,10 +23,14 @@ struct CDSVWriter::SImplementation {
                 }
             }
             if(wrappedflag == true) { //wrap column in quotes
-                std::string colwrap = '\"' + col + '\"';
-                for(size_t r = 0; r < colwrap.length(); r++) {
-                    sink->Put(colwrap[r]);
+                sink->Put('\"');
+                for(size_t r = 0; r < col.length(); r++) {
+                    if(col[r] == '\"') {
+                        sink->Put('\"');
+                    }
+                    sink->Put(col[r]);
                 }
+                sink->Put('\"');
             }
             else if (wrappedflag == false){ //add characters normally
                 for(size_t s = 0; s < col.length(); s++) {
@@ -57,7 +61,10 @@ struct CDSVWriter::SImplementation {
         for(size_t i = 0; i < row.size() - 1; i++) {//iterate through row, wrap each string in quotes
             std::string col = row[i];
             sink->Put('\"');
-            for(size_t j = 0; j < col.length(); j++) {              
+            for(size_t j = 0; j < col.length(); j++) {   
+                if(col[j] == '\"') {
+                    sink->Put('\"');
+                }           
                 sink->Put(col[j]);             
             }
             sink->Put('\"');

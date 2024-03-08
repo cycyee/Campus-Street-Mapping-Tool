@@ -1,5 +1,5 @@
 #include "StringUtils.h"
-
+#include<string> 
 namespace StringUtils{
 
 std::string Slice(const std::string &str, ssize_t start, ssize_t end) noexcept{
@@ -10,8 +10,7 @@ std::string Slice(const std::string &str, ssize_t start, ssize_t end) noexcept{
         start += str.length(); //convert negative index to string location
     }
     if (end == 0) {   //if only one parameter passed in, 
-        end = start;  //python treats it as the end and start automatically becomes 0
-        start = 0;
+        end = str.length();  //python treats it as the end and start automatically becomes 0
     }
     int len = end - start;
     if (len < 0 || len > str.length()) {
@@ -163,23 +162,53 @@ std::string Replace(const std::string &str, const std::string &old, const std::s
 std::vector< std::string > Split(const std::string &str, const std::string &splt) noexcept{
     std::vector < std::string > stringVector; //create empty vector
     std::string spltparam = splt; //make modifiable splt copy
-    if(splt == "") {
-        spltparam = " "; 
-    } //split on whitespace if nothing passed in (header has default param set to empty)
-    int start = 0;
-    int found = str.find(spltparam); //find first splt parameter
-    if (found == std::string::npos) {
-        return stringVector;
+
+    size_t start = 0;
+    if(splt.empty()) {
+        spltparam = " \t\n"; 
+        size_t found = str.find_first_of(spltparam); //find first splt parameter
+        if (found == std::string::npos) {
+            stringVector.push_back(str);
+            return stringVector;
+        }
+    else{
+        if(found == 0) {
+            stringVector.push_back("");
+            start = found + 1; //skip over the parameter length
+            found = str.find_first_of(spltparam, start);
+        }
+        while (found != std::string::npos) { //while loop to keep finding the splt parameter
+            while(str[found] == ' ' || str[found] == '\n' || str[found] == '\t') {
+                found++;
+            }
+            std::string entry = Strip(str.substr(start, found - start));
+            stringVector.push_back(entry); //start is 0 at first, so push back everything from the start to the first parameter found
+            start = found; //skip over the parameter length
+            found = str.find_first_of(spltparam, start + 1); //update found by searching over unsearched part
+        }
+    }
+    if (start < str.length()) {
+        std::string entry = Strip(str.substr(start, found - start));
+        stringVector.push_back(entry);
+    } //add last portion in case str doesn't end with the param
     }
     else{
-    while (found != std::string::npos) { //while loop to keep finding the splt parameter
-        stringVector.push_back(str.substr(start, found - start)); //start is 0 at first, so push back everything from the start to the first parameter found
-        start = found + spltparam.length(); //skip over the parameter length
-        found = str.find(spltparam, start); //update found by searching over unsearched part
+        size_t found = str.find(splt);
+        if(found == std::string::npos) {
+            stringVector.push_back(str);
+        }
+        while(found != std::string::npos) {
+            std::string entry = str.substr(start, found - start);
+            stringVector.push_back(entry);
+            start = found + spltparam.length();
+            found = str.find(spltparam, start);
+        }
+        if (start < str.length()) {
+            std::string entry = str.substr(start, found - start);
+            stringVector.push_back(entry);
+        }
     }
-    stringVector.push_back(str.substr(start)); //add last portion in case str doesn't end with the param
     return stringVector;
-    }
 }
 
 std::string Join(const std::string &str, const std::vector< std::string > &vect) noexcept{
@@ -188,7 +217,7 @@ std::string Join(const std::string &str, const std::vector< std::string > &vect)
         return newstr;
     }
     else{
-    for (int i = 0; i < vect.size()-1; i++) {
+    for (size_t i = 0; i < vect.size()-1; i++) {
         newstr += vect[i];
         newstr += str;
     }
@@ -199,12 +228,12 @@ std::string Join(const std::string &str, const std::vector< std::string > &vect)
 
 std::string ExpandTabs(const std::string &str, int tabsize) noexcept{
     std::string newstr;
-    int count = 0; //running count of characters outputted
-    for (int i = 0; i < str.length(); i++) {
+    size_t count = 0; //running count of characters outputted
+    for (size_t i = 0; i < str.length(); i++) {
         //when there is a tab, the spaces needed to the next tabstop is tabsize - count%tabsize
         if (str[i] == '\t') {
-            int remainder = tabsize - count % tabsize; 
-            for (int j =0; j < remainder; j++) {
+            size_t remainder = tabsize - (count % tabsize); 
+            for (size_t j = 0; j < remainder; j++) {
                 newstr += " ";
                 count++; //increment count for outputted spaces
             }
@@ -214,15 +243,14 @@ std::string ExpandTabs(const std::string &str, int tabsize) noexcept{
             count++;//increment count for outputted non-space characters
         }
     }
-    return newstr;
-    
+    return newstr;  
 }
 
 int EditDistance(const std::string &left, const std::string &right, bool ignorecase) noexcept{
     int a = left.length();
     int b = right.length();
 
-    std::vector<int> previous(b + 1, 0); //vectors to hold the rows of the 2x2 matrix
+    int previous; //vectors to hold the rows of the 2x2 matrix
     std::vector<int> current(b + 1, 0);
 
     std::string leftstr = left;//make modifiable versions of the strings in case ignorecase = true
@@ -234,20 +262,21 @@ int EditDistance(const std::string &left, const std::string &right, bool ignorec
     }
 
     for (int i = 0; i <= b; i++) {
-        previous[i] = i;
+        current[i] = i;
     }
     for (int j = 1; j <= a; j++) {
+        previous = current[0];
         current[0] = j;
-
         for (int k = 1; k <= b; k++) {
+            int temp = current[k];
             if (leftstr[j - 1] == rightstr[k -1]) { //previous diagonal in matrix
-                current[k] = previous[k-1];
+                current[k] = previous;
             }
             else{
-                current[k] = 1 + std::min(std::min(current[j - 1], previous[j]), previous[j - 1]); //minimum of the 3 adjacent places
+                current[k] = 1 + std::min(std::min(current[k - 1], previous), current[k]); //minimum of the 3 adjacent places
             }
+            previous = temp;
         }
-        previous = current;
     }
     return current[b]; //final diagonal value is the final distance
 }

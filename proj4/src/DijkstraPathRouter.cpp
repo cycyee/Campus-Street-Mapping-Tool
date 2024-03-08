@@ -22,7 +22,7 @@ struct CDijkstraPathRouter::SImplementation {
     }
     std::any GetVertexTag(TVertexID id) const noexcept {
         if(id < DVertices.size()) {
-            return DVertices[id].DTag
+            return DVertices[id].DTag;
         }
         return std::any();
     }
@@ -43,12 +43,12 @@ struct CDijkstraPathRouter::SImplementation {
     double FindShortestPath(TVertexID src, TVertexID dest, std::vector<TVertexID> &path) noexcept {
         std::vector < TVertexID > PendingVertices;
         std::vector < double > Distances(DVertices.size(), CPathRouter::NoPathExists);
-        std::vector < TVertexID  > Previous(DVertices.size(), CPathRouter::InvalidVertexID)
+        std::vector < TVertexID  > Previous(DVertices.size(), CPathRouter::InvalidVertexID);
         //use a lambda to compare the actual distances instead of the id numbers
         //want them sorted by distances, so that the top of the heap is the closest distance possible, and opposite swapping for the longest
-        auto VertexCompare = [&Distances](TVertexID left, TVertexID right) {return Distances[left] < Distances[right];} //use inequality to populate the min-heap
+        auto VertexCompare = [&Distances](TVertexID left, TVertexID right) {return Distances[left] < Distances[right];}; //use inequality to populate the min-heap
 
-        Distances[src] = 0.0 //set distances = to 0
+        Distances[src] = 0.0; //set distances = to 0
         PendingVertices.push_back(src);
         while(!PendingVertices.empty()) {
             auto CurrentID = PendingVertices.front();
@@ -88,18 +88,22 @@ struct CDijkstraPathRouter::SImplementation {
 CDijkstraPathRouter::CDijkstraPathRouter() {
     DImplementation = std::make_unique<SImplementation>();
 }
+CDijkstraPathRouter::~CDijkstraPathRouter() {
+    
+}
+
 std::size_t CDijkstraPathRouter::VertexCount() const noexcept {
     return DImplementation->VertexCount();
 }
 
-TVertexID CDijkstraPathRouter::AddVertex(std::any tag) noexcept {
+CDijkstraPathRouter::TVertexID CDijkstraPathRouter::AddVertex(std::any tag) noexcept {
     return DImplementation->AddVertex(tag);
 }
 std::any CDijkstraPathRouter::GetVertexTag(TVertexID id) const noexcept {
     return DImplementation->GetVertexTag(id);
 }
 
-bool CDijkstraPathRouter::AddEdge(TVertexID src, TVertexID dest, double weight, bool bidir = false) noexcept {
+bool CDijkstraPathRouter::AddEdge(TVertexID src, TVertexID dest, double weight, bool bidir) noexcept {
     return DImplementation->AddEdge(src, dest, bidir);
 }
 

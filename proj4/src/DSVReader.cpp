@@ -6,7 +6,9 @@ struct CDSVReader::SImplementation{
     std::shared_ptr<CDataSource>src;
     char delimiter;
     char ch;
-    SImplementation(std::shared_ptr< CDataSource > src, char delimiter) : src(src), delimiter(delimiter){
+    SImplementation(std::shared_ptr< CDataSource > Src, char delim){
+        delimiter = delim;
+        src = Src;
     }
     ~SImplementation() {
     }
@@ -21,6 +23,10 @@ struct CDSVReader::SImplementation{
         if(quoteflag == false) {
             if(ch == '\"') {
                 quoteflag = true;//set quoteflag if double quote encountered
+                if(src->Peek(ch) && ch == '\"'){                
+                    buffer.push_back('\"');//take quote literally
+                    quoteflag = false;
+                }
             }
             else if (ch == delimiter) {//these three signify the end of column or even end of row
                 if(buffer.empty()){
@@ -44,15 +50,14 @@ struct CDSVReader::SImplementation{
                 buffer.push_back(ch);//push back as normal if regular chars
             }
         }
-        else{
+        else{//quoteflag true
             if(ch == '\"') {//while quoteflag is true, another quote either means to take a quote literally, or the end of a quoted section
                 if(src->Peek(ch) && ch == '\"'){                
                     buffer.push_back('\"');//take quote literally
-                }    
-                else{
-                    quoteflag = false;//end of quoted section
                 }
-                
+                else{
+                    quoteflag = false;
+                }
             }
             else if(ch == EOF) {//eof unexpectedly pushes back whole entry
                 if(buffer.empty()){
@@ -65,6 +70,14 @@ struct CDSVReader::SImplementation{
                 buffer.clear();
                 }
             }
+            // else if (ch == delimiter) {
+            //     if(buffer.empty()) {
+            //         row.push_back("");
+            //     }
+            //     std::string column(buffer.begin(), buffer.end());
+            //     row.push_back(column);
+            //     buffer.clear();
+            // }
             else {
                 buffer.push_back(ch);
             }
@@ -80,11 +93,7 @@ struct CDSVReader::SImplementation{
     }
 
     bool End() {
-        char ch;
-        while (src->Peek(ch)) {
-        src->Get(ch);
-    }
-    return true;
+        return (!src->Peek(ch) && !src->Get(ch));
     }
 
 
