@@ -2,6 +2,7 @@
 #include <unordered_map>
 #include <vector>
 #include <algorithm> 
+#include<set>
 
 
 
@@ -18,9 +19,17 @@ struct CBusSystemIndexer::SImplementation{
         }
     };
 
+    struct SRoutePtrComparator {
+        bool operator()(const std::shared_ptr<SRoute>& lhs, const std::shared_ptr<SRoute>& rhs) const {
+            // Use std::less for case-sensitive alphabetical sorting
+            return std::less<std::string>()(lhs->Name(), rhs->Name());
+        }
+    };
+
+
     std::shared_ptr<CBusSystem> DBusSystem;
     std::vector <std::shared_ptr<SStop> >DSortedStops;
-    std::vector <std::shared_ptr<SRoute> > DSortedRoutes;
+    std::vector <std::shared_ptr<SRoute>> DSortedRoutes;
     std::unordered_map< TNodeID, std::shared_ptr<SStop> > DNodeIDToStop;
     std::unordered_map< std::pair< TNodeID, TNodeID > , std::unordered_set<std::shared_ptr<SRoute> >, pair_hash> DSrcDestToRoutes;
 
@@ -35,24 +44,25 @@ struct CBusSystemIndexer::SImplementation{
             DSortedStops.push_back(CurrentStop);//populating DSortedStops
             DNodeIDToStop[CurrentStop->NodeID()] = CurrentStop;
         }
-        std::sort(DSortedStops.begin(), DSortedStops.end(), StopIDCompare);
+        std::sort(DSortedStops.begin(), DSortedStops.end(), StopIDCompare);//sort for sorted stop lookup
 
         for(size_t Index = 0; Index < DBusSystem->RouteCount(); Index++) {
             auto CurrentRoute = DBusSystem->RouteByIndex(Index);
-            DSortedRoutes.push_back(CurrentRoute);//populate Sorted Routes
+            DSortedRoutes.push_back(CurrentRoute);//populate Sorted Routes, they will besorted using the struct at the top 
             for(size_t StopIndex = 1; StopIndex < CurrentRoute->StopCount(); StopIndex++) {
-                auto SourceNodeID = DBusSystem->StopByID(CurrentRoute->GetStopID(StopIndex - 1))->NodeID();
+                auto SourceNodeID = DBusSystem->StopByID(CurrentRoute->GetStopID(StopIndex - 1))->NodeID(); //since stopIndex starts at 1
                 auto DestinationNodeID = DBusSystem->StopByID(CurrentRoute->GetStopID(StopIndex))->NodeID();
                 auto SearchKey = std::make_pair(SourceNodeID, DestinationNodeID);
                 auto Search = DSrcDestToRoutes.find(SearchKey);
-                if(Search != DSrcDestToRoutes.end()) {
+                if(Search != DSrcDestToRoutes.end()) { //the route is already in dsrcdesttoroutes
                     Search->second.insert(CurrentRoute);
                 }
                 else {
-                    DSrcDestToRoutes[SearchKey] = {CurrentRoute};
+                    DSrcDestToRoutes[SearchKey] = {CurrentRoute}; //if not, add it in
                 }
             }
         }
+        std::sort(DSortedRoutes.begin(), DSortedRoutes.end(), SRoutePtrComparator());
     }
 
     std::size_t StopCount() const noexcept{
@@ -70,7 +80,7 @@ struct CBusSystemIndexer::SImplementation{
     }
 
     std::shared_ptr<SRoute> SortedRouteByIndex(std::size_t index) const noexcept{
-        if(index < DSortedRoutes.size()) {
+        if(index < DSortedRoutes.size()) {//revise
             return DSortedRoutes[index];
         }
         return nullptr;
@@ -100,9 +110,8 @@ struct CBusSystemIndexer::SImplementation{
         auto Search = DSrcDestToRoutes.find(SearchKey);
         return Search != DSrcDestToRoutes.end();
     }
-
-
 };
+
 //defer implementations using SImplementation PIMPL idiom 
 CBusSystemIndexer::CBusSystemIndexer(std::shared_ptr<CBusSystem> bussystem){
     DImplementation = std::make_unique<SImplementation> (bussystem);

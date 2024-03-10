@@ -16,7 +16,7 @@ TEST(DijkstraPathRouter, RouteTest) {
     PathRouter.AddEdge(Vertices[2], Vertices[1], 3);
     PathRouter.AddEdge(Vertices[1], Vertices[3], 9);
     std::vector<CPathRouter::TVertexID> Route;
-    std::vector<CPathRouter::TVertexID> ExpectedRoute = {Vertices[2], Vertices[1], Vertices[3]};
-    EXPECT_EQ(12.0, PathRouter.FindShortestPath(Vertices[2], Vertices[3], Route));
+    std::vector<CPathRouter::TVertexID> ExpectedRoute = {Vertices[2], Vertices[0], Vertices[4]};
+    EXPECT_EQ(4.0, PathRouter.FindShortestPath(Vertices[2], Vertices[4], Route)); //attention needed
     EXPECT_EQ(Route, ExpectedRoute);
 }

@@ -9,24 +9,18 @@
 
 struct CCSVBusSystem::SImplementation {
 
-
     struct SStop : public CBusSystem::SStop{
-
         TStopID DStopID;
         CStreetMap::TNodeID DNodeID;
-
         SStop(TStopID stopid, TStopID nodeid) {
             DStopID = stopid;
             DNodeID = nodeid;
         }
-
         ~SStop(){
-        }
-            
+        }  
         TStopID ID() const noexcept override{
             return DStopID;
         }
-
         CStreetMap::TNodeID NodeID() const noexcept override {
             return DNodeID;
         }
@@ -35,9 +29,9 @@ struct CCSVBusSystem::SImplementation {
     struct SRoute: public CBusSystem::SRoute {
         std::string DRouteID;
         std::vector<TStopID> DStopID;
-        SRoute(std::string routeid, TStopID stopid) {
+        SRoute(std::string routeid) {
             DRouteID = routeid;
-            DStopID.push_back(stopid);
+            //DStopID.push_back(stopid);
         }
         ~SRoute(){
         }
@@ -48,7 +42,7 @@ struct CCSVBusSystem::SImplementation {
             return DStopID.size();
         }
         TStopID GetStopID(std::size_t index) const noexcept override {
-            if(DStopID.size() < index) {
+            if(DStopID.size() > index) {
                 return (DStopID[index]);
             }
             return InvalidStopID;
@@ -57,12 +51,12 @@ struct CCSVBusSystem::SImplementation {
             DStopID.push_back(stopID);
         }
     };
-
+    
     std::vector<std::shared_ptr<CBusSystem::SStop>> DStop;
     std::unordered_map<TStopID, std::shared_ptr<CBusSystem::SStop>> DStopIdToStop;
 
     std::vector<std::shared_ptr<CBusSystem::SRoute>> DRoute;
-    std::unordered_map<std::string, std::shared_ptr<CBusSystem::SRoute> > DRouteIdToRoute;  
+    std::unordered_map<std::string, std::shared_ptr<CBusSystem::SRoute> > DRouteIdToRoute;
     bool firstrow = true;
     SImplementation(std::shared_ptr< CDSVReader > stopsrc, std::shared_ptr< CDSVReader > routesrc) {
         std::vector<std::string> row;
@@ -85,24 +79,38 @@ struct CCSVBusSystem::SImplementation {
             }
         }
         //store route
+        routesrc->ReadRow(row);
+        std::string routeID;
+        TStopID stopID;
+        std::shared_ptr<SRoute> route;
+        if(!row.empty()) {
+            routeID = row[0];
+            stopID = std::stoull(row[1]);
+            route = std::make_shared<SRoute>(routeID);
+            route->AddStopID(stopID);
+            DRoute.push_back(route);
+            DRouteIdToRoute[routeID] = route;
+            std::cout<<"stop id 1: "<<stopID<<std::endl;
+        }
         while (routesrc->ReadRow(row)) {
             if (!row.empty()) {
-                //std::cout<<row[0]<<std::endl;//this is a testing line
-                std::string routeID = row[0];
-                TStopID stopID = std::stoull(row[1]);
-                // Check if the route already exists
+                routeID = row[0];
+                stopID = std::stoull(row[1]);
                 auto routeIter = DRouteIdToRoute.find(routeID);
                 if (routeIter != DRouteIdToRoute.end()) {
                     // If the route exists, add in stop
-                    //routeIter->second->AddStopID(stopID);
-                    continue;
+                    route->AddStopID(stopID);
+                    std::cout<<"stop id: "<<stopID<<std::endl;
+                    //DStopID.push_back(stopID);
                 }
                 else {
                     // If the route does not exist, create new route and add stop in
-                    auto route = std::make_shared<SRoute>(routeID, stopID);
-                    route->AddStopID(stopID);
-                    DRoute.push_back(route);
-                    DRouteIdToRoute[routeID] = route;
+                    auto newroute = std::make_shared<SRoute>(routeID);
+                    std::cout<<"stop id: "<<stopID<<std::endl;
+                    newroute->AddStopID(stopID);
+                    DRoute.push_back(newroute);
+                    DRouteIdToRoute[routeID] = newroute;
+                    route = newroute;
                 }
             }    
         }

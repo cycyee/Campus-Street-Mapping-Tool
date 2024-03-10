@@ -72,7 +72,7 @@ struct COpenStreetMap::SImplementation {
             return NodeRefVector.size(); //the size of the vect tells us how many node refs were in the way
         }
         TNodeID GetNodeID(std::size_t index) const noexcept override {
-            if(NodeRefVector.size() < index) { //search through the vector for a node ref
+            if(index < NodeRefVector.size()) { //search through the vector for a node ref
                 return NodeRefVector[index];
             }
             return InvalidNodeID; //special type for invaluide node id
@@ -81,7 +81,7 @@ struct COpenStreetMap::SImplementation {
             return WayAttributes.size(); //way attributes contains the attributes, so size is the count
         }
         std::string GetAttributeKey(std::size_t index) const noexcept override {
-            if(WayAttributeKeys.size() < index) {
+            if(index < WayAttributeKeys.size()) {
                 return WayAttributeKeys[index];//can search through way attribute key vector to get a key
             }
             return std::string();//empty string

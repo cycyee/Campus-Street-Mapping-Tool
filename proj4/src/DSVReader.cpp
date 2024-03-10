@@ -3,12 +3,12 @@
 #include<iostream>
 
 struct CDSVReader::SImplementation{
-    std::shared_ptr<CDataSource>src;
-    char delimiter;
+    std::shared_ptr<CDataSource> Src;
+    char delim;
     char ch;
-    SImplementation(std::shared_ptr< CDataSource > Src, char delim){
-        delimiter = delim;
-        src = Src;
+    SImplementation(std::shared_ptr< CDataSource > src, char delimiter){
+        delim = delimiter;
+        Src = src;
     }
     ~SImplementation() {
     }
@@ -16,19 +16,19 @@ struct CDSVReader::SImplementation{
     row.clear();//clear row before each read
     std::vector<char> buffer; //buffer to hold columns
     bool quoteflag = false;//default quoteflag is false
-    if(delimiter == '\"') {//set double quote delimiter to comma separator
-        delimiter = ',';
+    if(delim == '\"') {//set double quote delimiter to comma separator
+        delim = ',';
     }
-    while(src->Get(ch)) {
+    while(Src->Get(ch)) {
         if(quoteflag == false) {
             if(ch == '\"') {
                 quoteflag = true;//set quoteflag if double quote encountered
-                if(src->Peek(ch) && ch == '\"'){                
+                if(Src->Peek(ch) && ch == '\"'){                
                     buffer.push_back('\"');//take quote literally
                     quoteflag = false;
                 }
             }
-            else if (ch == delimiter) {//these three signify the end of column or even end of row
+            else if (ch == delim) {//these three signify the end of column or even end of row
                 if(buffer.empty()){
                     row.push_back("");
                 }
@@ -52,7 +52,7 @@ struct CDSVReader::SImplementation{
         }
         else{//quoteflag true
             if(ch == '\"') {//while quoteflag is true, another quote either means to take a quote literally, or the end of a quoted section
-                if(src->Peek(ch) && ch == '\"'){                
+                if(Src->Peek(ch) && ch == '\"'){                
                     buffer.push_back('\"');//take quote literally
                 }
                 else{
@@ -93,7 +93,7 @@ struct CDSVReader::SImplementation{
     }
 
     bool End() {
-        return (!src->Peek(ch) && !src->Get(ch));
+        return (!Src->Peek(ch) && !Src->Get(ch));
     }
 
 

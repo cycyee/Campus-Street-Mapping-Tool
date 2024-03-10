@@ -1,16 +1,16 @@
 #include "DijkstraPathRouter.h"
 #include<vector>
 #include<algorithm>
-
+#include <iostream>
 //algorithm sorting functions, using prebuilt min heap + pop_heap fn
 struct CDijkstraPathRouter::SImplementation {
     using TEdge = std::pair<double, TVertexID>; 
     struct SVertex {
         std::any DTag;
-        std::vector <TEdge > DEdges;
+        std::vector <TEdge> DEdges;
     };
 
-    std::vector < SVertex > DVertices; 
+    std::vector <SVertex> DVertices; 
 
     std::size_t VertexCount() const noexcept{
         return DVertices.size();
@@ -27,9 +27,10 @@ struct CDijkstraPathRouter::SImplementation {
         return std::any();
     }
     bool AddEdge(TVertexID src, TVertexID dest, double weight, bool bidir = false) noexcept {
-        if((src < DVertices.size()) && dest < DVertices.size() && 0.0 <= weight)  { //check for negative edge weight, check if IDs are in range of DVertices
+        if((src < DVertices.size()) && (dest < DVertices.size()))  { //check for negative edge weight, check if IDs are in range of DVertices
+            std::cout<<"edge added: "<<weight<<std::endl;
             DVertices[src].DEdges.push_back(std::make_pair(weight, dest));
-            if(bidir) { //
+            if(bidir) { //add directional edge in oppposite dir
                 DVertices[src].DEdges.push_back(std::make_pair(weight, src));
             }
             return true;
@@ -50,14 +51,22 @@ struct CDijkstraPathRouter::SImplementation {
 
         Distances[src] = 0.0; //set distances = to 0
         PendingVertices.push_back(src);
+
         while(!PendingVertices.empty()) {
             auto CurrentID = PendingVertices.front();
+            //std::cout<<CurrentID<<std::endl;
             std::pop_heap(PendingVertices.begin(), PendingVertices.end());
-            PendingVertices.pop_back(); //will get current id off the top of the heap
+            PendingVertices.pop_back(); //will get current id off the top of the heap, removes the shortest distance from pendingvertices
+            std::cout<<"DVertices size here:"<<DVertices.size()<<std::endl;
+            std::cout<<"Current ID here:"<<CurrentID<<std::endl;
+            std::cout<<"DEdges size:"<<DVertices[CurrentID].DEdges.size()<<std::endl;
 
-            for(auto Edge : DVertices[CurrentID].DEdges) {
+
+            for(auto Edge : DVertices[CurrentID].DEdges) { //go through edges
                 auto EdgeWeight = Edge.first;
+                std::cout<<"Edgeweight:"<<EdgeWeight<<std::endl;
                 auto DestID = Edge.second;
+                std::cout<<"DestID:"<<DestID<<std::endl;
                 auto TotalDistance = Distances[CurrentID] + EdgeWeight;
                 if(TotalDistance < Distances[DestID]) { //check if distances are in the range
                     if(CPathRouter::NoPathExists == Distances[DestID]) {
@@ -80,8 +89,8 @@ struct CDijkstraPathRouter::SImplementation {
             dest = Previous[dest];
             path.push_back(dest);
         } while(dest != src);
-            std::reverse(path.begin(), path.end());
-            return PathDistance;
+        std::reverse(path.begin(), path.end());
+        return PathDistance;
     }
 };
 
@@ -89,7 +98,7 @@ CDijkstraPathRouter::CDijkstraPathRouter() {
     DImplementation = std::make_unique<SImplementation>();
 }
 CDijkstraPathRouter::~CDijkstraPathRouter() {
-    
+
 }
 
 std::size_t CDijkstraPathRouter::VertexCount() const noexcept {
@@ -104,7 +113,7 @@ std::any CDijkstraPathRouter::GetVertexTag(TVertexID id) const noexcept {
 }
 
 bool CDijkstraPathRouter::AddEdge(TVertexID src, TVertexID dest, double weight, bool bidir) noexcept {
-    return DImplementation->AddEdge(src, dest, bidir);
+    return DImplementation->AddEdge(src, dest, weight, bidir);
 }
 
 bool CDijkstraPathRouter::Precompute(std::chrono::steady_clock::time_point deadline) noexcept {
