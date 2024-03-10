@@ -71,7 +71,9 @@ struct CDijkstraPathRouter::SImplementation {
             std::cout<<"DVertices size here:"<<DVertices.size()<<std::endl;//testiing
             std::cout<<"Current ID here:"<<CurrentID<<std::endl;//testing
             std::cout<<"DEdges size:"<<DVertices[CurrentID].DEdges.size()<<std::endl;//testing
-
+            if(DVertices[CurrentID].DEdges.size() == 0){
+                return NoPathExists;
+            }
 
             for(auto Edge : DVertices[CurrentID].DEdges) { //go through edges
                 auto EdgeWeight = Edge.first;

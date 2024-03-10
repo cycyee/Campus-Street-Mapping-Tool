@@ -13,7 +13,7 @@ struct CDijkstraTransportationPlanner::SImplementation {
     CDijkstraPathRouter DShortestPathRouter;
     CDijkstraPathRouter DFastestPathRouterBike;
     CDijkstraPathRouter DFastestPathRouterWalkBus;
-
+    std::vector <TTripStep> TransportType;
 
     SImplementation(std::shared_ptr<SConfiguration> config)  {
         DStreetMap = config->StreetMap();//pull map and busSystem from config
@@ -54,7 +54,7 @@ struct CDijkstraTransportationPlanner::SImplementation {
                 double weightTimeWalk = weightDist/config->WalkSpeed();
                 double weightTimeBike = weightDist/config->BikeSpeed();
                 double weightTime;
-                bool bussable;//some default initialization
+                bool bussable = false;//some default initialization
                 if(BusSystemIndexer.RouteBetweenNodeIDs(DStreetMap->NodeByID(PreviousNodeID)->ID(), DStreetMap->NodeByID(NextNodeID)->ID())) {
                     bussable = true;
                 }
