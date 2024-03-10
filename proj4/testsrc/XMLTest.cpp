@@ -192,10 +192,10 @@ TEST(XMLReaderTest, SpecialCharacterTest){
     EXPECT_EQ(Entity.DAttributes.size(), 0);
     
     EXPECT_TRUE(Reader.End());
-}
+}*/
 
 
-*/
+
 TEST(XMLWriterTest, SimpleTest){
     auto OutStream = std::make_shared<CStringDataSink>();
     CXMLWriter Writer(OutStream);

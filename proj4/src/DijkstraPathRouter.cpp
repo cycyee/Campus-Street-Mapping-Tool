@@ -28,7 +28,8 @@ struct CDijkstraPathRouter::SImplementation {
     }
     bool AddEdge(TVertexID src, TVertexID dest, double weight, bool bidir = false) noexcept {
         if((src < DVertices.size()) && (dest < DVertices.size()))  { //check for negative edge weight, check if IDs are in range of DVertices
-            std::cout<<"edge added: "<<weight<<std::endl;
+            std::cout<<"edge added: "<<weight<<src<< " to"<<dest <<std::endl;
+            std::cout<<DVertices[src].DEdges.size()<<std::endl;
             DVertices[src].DEdges.push_back(std::make_pair(weight, dest));
             if(bidir) { //add directional edge in oppposite dir
                 DVertices[src].DEdges.push_back(std::make_pair(weight, src));
@@ -46,7 +47,7 @@ struct CDijkstraPathRouter::SImplementation {
         std::vector < double > Distances(DVertices.size(), CPathRouter::NoPathExists);
         std::cout<<"size of Distances:"<<Distances.size() <<std::endl;
         std::vector < TVertexID  > Previous(DVertices.size(), CPathRouter::InvalidVertexID);
-        if(Distances.size() == 0 || Previous.size() == 0) {
+        if(DVertices.size()== 0) {
             std::cout<<"why no vertices lil bro"<<std::endl;
             return NoPathExists;
         }
@@ -59,7 +60,7 @@ struct CDijkstraPathRouter::SImplementation {
 
         while(!PendingVertices.empty()) {
             auto CurrentID = PendingVertices.front();
-            if (CurrentID >= DVertices.size()) {
+            if (CurrentID > DVertices.size()) {
                 // Handle the out-of-bounds access here
                 std::cout<<"ERROR currentID out of range"<<std::endl;
                 return -1;
@@ -72,6 +73,7 @@ struct CDijkstraPathRouter::SImplementation {
             std::cout<<"Current ID here:"<<CurrentID<<std::endl;//testing
             std::cout<<"DEdges size:"<<DVertices[CurrentID].DEdges.size()<<std::endl;//testing
             if(DVertices[CurrentID].DEdges.size() == 0){
+
                 return NoPathExists;
             }
 
@@ -80,7 +82,7 @@ struct CDijkstraPathRouter::SImplementation {
                 std::cout<<"Edgeweight:"<<EdgeWeight<<std::endl;
                 auto DestID = Edge.second;
 
-                if (CurrentID >= DVertices.size() || DestID >= DVertices.size()) {
+                if (CurrentID > DVertices.size() || DestID > DVertices.size()) {
                     // Handle the out-of-bounds access here
                     std::cout<<"ERROR DestID out of range"<<std::endl;
                     return -1;

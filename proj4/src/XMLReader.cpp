@@ -7,17 +7,19 @@
 #include <expat.h>
 #include "queue"
 
+
 struct CXMLReader::SImplementation {
     std::shared_ptr< CDataSource > DDataSource;
     XML_Parser DXMLParser;
     std::queue<SXMLEntity> DEntityQueue;
-    bool skipcdata;
+    //bool skipcdata;
     
     void StartElementHandler(const std::string &name, const std::vector<std::string> &attrs) {
         SXMLEntity TempEntity;
         TempEntity.DNameData = name;
         TempEntity.DType = SXMLEntity::EType::StartElement;
         for(size_t Index = 0; Index < attrs.size(); Index += 2) { //to add values in as pairs
+
             TempEntity.SetAttribute(attrs[Index], attrs[Index + 1]); // Loop through attributes and add them to the entity
         }
         DEntityQueue.push(TempEntity); // Enqueue the entity
@@ -58,7 +60,7 @@ struct CXMLReader::SImplementation {
     };
 
     static void CharacterDataHandlerCallback (void *context, const XML_Char *s, int len) {
-        SImplementation *ReaderObject = static_cast<SImplementation*>(context);
+        SImplementation *ReaderObject = static_cast<SImplementation *>(context);
         ReaderObject -> CharacterDataHandler(std::string(s, len)); // call char handler
     };
     
@@ -73,13 +75,13 @@ struct CXMLReader::SImplementation {
 
 
     bool End() const {
-        return (DEntityQueue.empty() && DDataSource->End());
+        return (DDataSource->End());
     };
 
     bool ReadEntity(SXMLEntity &entity, bool skipcdata) {
         //read from source, pass to parser, return the entity
+        std::vector<char> DataBuffer;
         while(DEntityQueue.empty()) {
-            std::vector<char> DataBuffer;
             if (DDataSource ->Read(DataBuffer, 512)) {
                 XML_Parse(DXMLParser, DataBuffer.data(), DataBuffer.size(), DataBuffer.size() < 512);
             }
@@ -91,7 +93,7 @@ struct CXMLReader::SImplementation {
             return false;
         }
         if(skipcdata == true) {//pop CDATA elements off if skipcdata is true
-            for(size_t i = 0; i < DEntityQueue.size(); i++) {
+            while(!DEntityQueue.empty() && DEntityQueue.front().DType == SXMLEntity::EType::CharData) {
                 if(DEntityQueue.front().DType == SXMLEntity::EType::CharData){
                     DEntityQueue.pop();
                 }
@@ -100,7 +102,7 @@ struct CXMLReader::SImplementation {
         entity = DEntityQueue.front();
         DEntityQueue.pop();
         return true;
-    };
+    }
 };
 
 CXMLReader::CXMLReader(std::shared_ptr < CDataSource > src){

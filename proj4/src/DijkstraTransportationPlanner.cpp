@@ -5,6 +5,7 @@
 #include "BusSystemIndexer.h"
 #include "TransportationPlannerConfig.h"
 #include <iostream>
+#include <string>
 
 struct CDijkstraTransportationPlanner::SImplementation {
     std::shared_ptr < CStreetMap > DStreetMap;
@@ -13,7 +14,7 @@ struct CDijkstraTransportationPlanner::SImplementation {
     CDijkstraPathRouter DShortestPathRouter;
     CDijkstraPathRouter DFastestPathRouterBike;
     CDijkstraPathRouter DFastestPathRouterWalkBus;
-    std::vector <TTripStep> TransportType;
+    std::unordered_map <TNodeID, CTransportationPlanner::ETransportationMode> TransportType;
 
     SImplementation(std::shared_ptr<SConfiguration> config)  {
         DStreetMap = config->StreetMap();//pull map and busSystem from config
@@ -39,36 +40,37 @@ struct CDijkstraTransportationPlanner::SImplementation {
             CBusSystemIndexer BusSystemIndexer(DBusSystem);
             
             for(size_t NodeIndex = 1; NodeIndex < Way->NodeCount(); NodeIndex++) { //go through nodes in each way
-                auto NextNodeID = Way->GetNodeID(NodeIndex);
+                auto NextNodeID = Way->GetNodeID(NodeIndex);//get next node id
+                auto PreviousNode = DStreetMap->NodeByID(PreviousNodeID); //get nodes themselves
+                auto NextNode = DStreetMap->NodeByID(NextNodeID);
                 //distance in miles from the 2 nodes'locations
-                double busSpeed; //default init
-                auto weightDist = SGeographicUtils::HaversineDistanceInMiles(DStreetMap->NodeByID(PreviousNodeID)->Location(),DStreetMap->NodeByID(NextNodeID)->Location());
-                DShortestPathRouter.AddEdge(DStreetMap->NodeByID(PreviousNodeID)->ID(), DStreetMap->NodeByID(NextNodeID)->ID(), weightDist, Bidirectional);
-                if(Way->GetAttribute("maxspeed") != std::string()) {
-                    auto busSpeed = std::stod(Way->GetAttribute("maxspeed")); //pull speed limit if its listed
-                }
-                else{
-                    auto busSpeed = config->DefaultSpeedLimit(); //if not, default is speed
+                double busSpeed = config->DefaultSpeedLimit(); //default init
+                auto weightDist = SGeographicUtils::HaversineDistanceInMiles(PreviousNode->Location(), NextNode->Location());
+                DShortestPathRouter.AddEdge(PreviousNode->ID(), NextNode->ID(), weightDist, Bidirectional);
+                if(Way->HasAttribute("maxspeed")) {
+                    busSpeed = std::stod(Way->GetAttribute("maxspeed")); //pull speed limit if its listed
                 }
                 double weightTimeBus = weightDist/busSpeed; //distance/speed = time, and weightTimeBus will depend on whether there is a posted speed
                 double weightTimeWalk = weightDist/config->WalkSpeed();
                 double weightTimeBike = weightDist/config->BikeSpeed();
-                double weightTime;
                 bool bussable = false;//some default initialization
-                if(BusSystemIndexer.RouteBetweenNodeIDs(DStreetMap->NodeByID(PreviousNodeID)->ID(), DStreetMap->NodeByID(NextNodeID)->ID())) {
+                if(BusSystemIndexer.RouteBetweenNodeIDs(PreviousNode->ID(), NextNode->ID())) {
                     bussable = true;
                 }
-                if(bussable) {
-                    auto weightTime = weightTimeBus + (config->BusStopTime()/3600);//check if we need to be walking or not, and busstop time is in seconds, so convert to hours
+                if(bussable == true) {
+                    weightTimeBus += (config->BusStopTime()/3600);//check if we need to be walking or not, and busstop time is in seconds, so convert to hours
+                    DFastestPathRouterWalkBus.AddEdge(PreviousNode->ID(), NextNode->ID(), weightTimeBus, Bidirectional);
+                    std::cout<<"Bus speed: "<<busSpeed<<std::endl;
+                    TransportType[PreviousNodeID] = ETransportationMode::Bus;
                 }
                 else{
-                    auto weightTime = weightTimeWalk + (config->BusStopTime()/3600);//convert to hours from seconds
+                    DFastestPathRouterWalkBus.AddEdge(PreviousNode->ID(), NextNode->ID(), weightTimeWalk, true);
+                    TransportType[PreviousNodeID] = ETransportationMode::Walk;
                 }
                 if(Bikable) {//bikable always bidirectional
-                    DFastestPathRouterBike.AddEdge(DStreetMap->NodeByID(PreviousNodeID)->ID(), DStreetMap->NodeByID(NextNodeID)->ID(), weightTimeBike, true);
+                    DFastestPathRouterBike.AddEdge(PreviousNode->ID(), NextNode->ID(), weightTimeBike, true);
                 }
                 //walkbus will have different time as the weight depending on bussable flag
-                DFastestPathRouterWalkBus.AddEdge(DStreetMap->NodeByID(PreviousNodeID)->ID(), DStreetMap->NodeByID(NextNodeID)->ID(), weightTime, Bidirectional);
 
                 PreviousNodeID = NextNodeID;//reassign prevnode id
             }
@@ -94,11 +96,6 @@ struct CDijkstraTransportationPlanner::SImplementation {
             std::cout<<"error here 1"<<std::endl;
             return CPathRouter::NoPathExists; // or any appropriate error code
         }
-        if (ShortestPath.empty()) {
-            // Handle error: Shortest path not found
-            std::cout<<"error here 2"<<std::endl;
-            return -1; // or any appropriate error code
-        }
         auto SourceVertexID = DNodeToVertexID[src];
         auto DestinationVertexID = DNodeToVertexID[dest];
         auto Distance = DShortestPathRouter.FindShortestPath(SourceVertexID, DestinationVertexID, ShortestPath);
@@ -110,11 +107,27 @@ struct CDijkstraTransportationPlanner::SImplementation {
     }
     double FindFastestPath(TNodeID src, TNodeID dest, std::vector< TTripStep > &path) {
         //divide shortest distances by respective speeds
-        std::vector <CPathRouter::TVertexID> ShortestPath;
-        auto DistanceBike = DFastestPathRouterBike.FindShortestPath(src, dest, ShortestPath);
-        auto DistanceBusWalk = DFastestPathRouterWalkBus.FindShortestPath(src, dest, ShortestPath);
-        return std::min(DistanceBike, DistanceBusWalk);
-        
+        std::vector <CPathRouter::TVertexID> ShortestPathBike;
+        std::vector <CPathRouter::TVertexID> ShortestPathWalkBus;
+        auto TimeBike = DFastestPathRouterBike.FindShortestPath(src, dest, ShortestPathBike);
+        auto TimeWalkBus = DFastestPathRouterWalkBus.FindShortestPath(src, dest, ShortestPathWalkBus);
+        if(TimeBike < TimeWalkBus) {
+            for(auto VertexID : ShortestPathBike) {
+            auto nodepair = std::make_pair(ETransportationMode::Bike, VertexID);
+            path.push_back(nodepair);
+            }
+            return TimeBike;
+        }
+        else{
+            for(auto VertexID : ShortestPathWalkBus) {
+                auto search = TransportType.find(VertexID);
+                if(search != TransportType.end()) {
+                    auto nodepair = std::make_pair(search->second, VertexID);
+                    path.push_back(nodepair);
+                }
+            }
+            return TimeWalkBus;
+        }
     }
     bool GetPathDescription(const std::vector< TTripStep > &path, std::vector< std::string > &desc) const {
         return true;
