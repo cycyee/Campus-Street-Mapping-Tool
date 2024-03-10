@@ -2,7 +2,7 @@
 #include <unordered_map>
 #include <vector>
 #include <algorithm> 
-#include<set>
+#include <set>
 
 
 
@@ -52,7 +52,7 @@ struct CBusSystemIndexer::SImplementation{
             for(size_t StopIndex = 1; StopIndex < CurrentRoute->StopCount(); StopIndex++) {
                 auto SourceNodeID = DBusSystem->StopByID(CurrentRoute->GetStopID(StopIndex - 1))->NodeID(); //since stopIndex starts at 1
                 auto DestinationNodeID = DBusSystem->StopByID(CurrentRoute->GetStopID(StopIndex))->NodeID();
-                auto SearchKey = std::make_pair(SourceNodeID, DestinationNodeID);
+                auto SearchKey = std::make_pair(SourceNodeID, DestinationNodeID);//dsrcdesttoroutes holds a pair using the pair hash above
                 auto Search = DSrcDestToRoutes.find(SearchKey);
                 if(Search != DSrcDestToRoutes.end()) { //the route is already in dsrcdesttoroutes
                     Search->second.insert(CurrentRoute);
@@ -62,13 +62,14 @@ struct CBusSystemIndexer::SImplementation{
                 }
             }
         }
-        std::sort(DSortedRoutes.begin(), DSortedRoutes.end(), SRoutePtrComparator());
+        std::sort(DSortedRoutes.begin(), DSortedRoutes.end(), SRoutePtrComparator());//sort the DSortedRoutes using the comparator, which sorts case-alphabetically
     }
 
+    //stopcount remains the same 
     std::size_t StopCount() const noexcept{
         return DBusSystem ->StopCount();
     }
-    std::size_t RouteCount() const noexcept {
+    std::size_t RouteCount() const noexcept { //routecount is also already stored
         return DBusSystem->RouteCount();
     }
     std::shared_ptr<SStop> SortedStopByIndex(std::size_t index) const noexcept{
@@ -79,8 +80,8 @@ struct CBusSystemIndexer::SImplementation{
         return nullptr;
     }
 
-    std::shared_ptr<SRoute> SortedRouteByIndex(std::size_t index) const noexcept{
-        if(index < DSortedRoutes.size()) {//revise
+    std::shared_ptr<SRoute> SortedRouteByIndex(std::size_t index) const noexcept{//routes are pre-sorted via the std::sort in Simplementation
+        if(index < DSortedRoutes.size()) {//searchable by index
             return DSortedRoutes[index];
         }
         return nullptr;
@@ -95,7 +96,7 @@ struct CBusSystemIndexer::SImplementation{
 
     }
     bool RoutesByNodeIDs(TNodeID src, TNodeID dest, std::unordered_set<std::shared_ptr<SRoute> > &routes) const noexcept{
-        auto SearchKey = std::make_pair(src, dest);
+        auto SearchKey = std::make_pair(src, dest);//DSrcDestToRoutes holds all of the routes, so searchable by src/dest pair
         auto Search = DSrcDestToRoutes.find(SearchKey);
         if(Search != DSrcDestToRoutes.end()) {
             routes = Search->second;

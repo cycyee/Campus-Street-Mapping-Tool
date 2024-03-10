@@ -7,6 +7,7 @@
 #include "TransportationPlannerConfig.h"
 #include "DijkstraTransportationPlanner.h"
 #include "GeographicUtils.h"
+#include "DSVReader.h"
 
 TEST(CSVOSMTransporationPlanner, SimpleTest){
     auto InStreamOSM = std::make_shared<CStringDataSource>( "<?xml version='1.0' encoding='UTF-8'?>"

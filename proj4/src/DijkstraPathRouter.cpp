@@ -44,7 +44,12 @@ struct CDijkstraPathRouter::SImplementation {
     double FindShortestPath(TVertexID src, TVertexID dest, std::vector<TVertexID> &path) noexcept {
         std::vector < TVertexID > PendingVertices;
         std::vector < double > Distances(DVertices.size(), CPathRouter::NoPathExists);
+        std::cout<<"size of Distances:"<<Distances.size() <<std::endl;
         std::vector < TVertexID  > Previous(DVertices.size(), CPathRouter::InvalidVertexID);
+        if(Distances.size() == 0 || Previous.size() == 0) {
+            std::cout<<"why no vertices lil bro"<<std::endl;
+            return NoPathExists;
+        }
         //use a lambda to compare the actual distances instead of the id numbers
         //want them sorted by distances, so that the top of the heap is the closest distance possible, and opposite swapping for the longest
         auto VertexCompare = [&Distances](TVertexID left, TVertexID right) {return Distances[left] < Distances[right];}; //use inequality to populate the min-heap
@@ -54,18 +59,31 @@ struct CDijkstraPathRouter::SImplementation {
 
         while(!PendingVertices.empty()) {
             auto CurrentID = PendingVertices.front();
+            if (CurrentID >= DVertices.size()) {
+                // Handle the out-of-bounds access here
+                std::cout<<"ERROR currentID out of range"<<std::endl;
+                return -1;
+            }
+            if(CurrentID == dest) {break;} //to skip if we are at the dest
             //std::cout<<CurrentID<<std::endl;
             std::pop_heap(PendingVertices.begin(), PendingVertices.end());
             PendingVertices.pop_back(); //will get current id off the top of the heap, removes the shortest distance from pendingvertices
-            std::cout<<"DVertices size here:"<<DVertices.size()<<std::endl;
-            std::cout<<"Current ID here:"<<CurrentID<<std::endl;
-            std::cout<<"DEdges size:"<<DVertices[CurrentID].DEdges.size()<<std::endl;
+            std::cout<<"DVertices size here:"<<DVertices.size()<<std::endl;//testiing
+            std::cout<<"Current ID here:"<<CurrentID<<std::endl;//testing
+            std::cout<<"DEdges size:"<<DVertices[CurrentID].DEdges.size()<<std::endl;//testing
 
 
             for(auto Edge : DVertices[CurrentID].DEdges) { //go through edges
                 auto EdgeWeight = Edge.first;
                 std::cout<<"Edgeweight:"<<EdgeWeight<<std::endl;
                 auto DestID = Edge.second;
+
+                if (CurrentID >= DVertices.size() || DestID >= DVertices.size()) {
+                    // Handle the out-of-bounds access here
+                    std::cout<<"ERROR DestID out of range"<<std::endl;
+                    return -1;
+                }
+
                 std::cout<<"DestID:"<<DestID<<std::endl;
                 auto TotalDistance = Distances[CurrentID] + EdgeWeight;
                 if(TotalDistance < Distances[DestID]) { //check if distances are in the range
