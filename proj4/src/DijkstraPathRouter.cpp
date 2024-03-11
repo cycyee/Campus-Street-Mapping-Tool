@@ -27,15 +27,15 @@ struct CDijkstraPathRouter::SImplementation {
         return std::any();
     }
     bool AddEdge(TVertexID src, TVertexID dest, double weight, bool bidir = false) noexcept {
-        if((src < DVertices.size()) && (dest < DVertices.size()))  { //check for negative edge weight, check if IDs are in range of DVertices
+        if((src < DVertices.size() && dest < DVertices.size()))  { //check for negative edge weight, check if IDs are in range of DVertices
             std::cout<<"edge added: "<<weight<<src<< " to"<<dest <<std::endl;
-            std::cout<<DVertices[src].DEdges.size()<<std::endl;
             DVertices[src].DEdges.push_back(std::make_pair(weight, dest));
             if(bidir) { //add directional edge in oppposite dir
                 DVertices[src].DEdges.push_back(std::make_pair(weight, src));
             }
             return true;
         }
+        std::cout<<"edge failed"<<std::endl;
         return false;
     }
     bool Precompute(std::chrono::steady_clock::time_point deadline) noexcept {
@@ -45,7 +45,6 @@ struct CDijkstraPathRouter::SImplementation {
     double FindShortestPath(TVertexID src, TVertexID dest, std::vector<TVertexID> &path) noexcept {
         std::vector < TVertexID > PendingVertices;
         std::vector < double > Distances(DVertices.size(), CPathRouter::NoPathExists);
-        std::cout<<"size of Distances:"<<Distances.size() <<std::endl;
         std::vector < TVertexID  > Previous(DVertices.size(), CPathRouter::InvalidVertexID);
         if(DVertices.size()== 0) {
             std::cout<<"why no vertices lil bro"<<std::endl;
@@ -69,9 +68,7 @@ struct CDijkstraPathRouter::SImplementation {
             //std::cout<<CurrentID<<std::endl;
             std::pop_heap(PendingVertices.begin(), PendingVertices.end());
             PendingVertices.pop_back(); //will get current id off the top of the heap, removes the shortest distance from pendingvertices
-            std::cout<<"DVertices size here:"<<DVertices.size()<<std::endl;//testiing
-            std::cout<<"Current ID here:"<<CurrentID<<std::endl;//testing
-            std::cout<<"DEdges size:"<<DVertices[CurrentID].DEdges.size()<<std::endl;//testing
+            
             if(DVertices[CurrentID].DEdges.size() == 0){
 
                 return NoPathExists;
@@ -79,16 +76,12 @@ struct CDijkstraPathRouter::SImplementation {
 
             for(auto Edge : DVertices[CurrentID].DEdges) { //go through edges
                 auto EdgeWeight = Edge.first;
-                std::cout<<"Edgeweight:"<<EdgeWeight<<std::endl;
                 auto DestID = Edge.second;
-
                 if (CurrentID > DVertices.size() || DestID > DVertices.size()) {
                     // Handle the out-of-bounds access here
                     std::cout<<"ERROR DestID out of range"<<std::endl;
                     return -1;
                 }
-
-                std::cout<<"DestID:"<<DestID<<std::endl;
                 auto TotalDistance = Distances[CurrentID] + EdgeWeight;
                 if(TotalDistance < Distances[DestID]) { //check if distances are in the range
                     if(CPathRouter::NoPathExists == Distances[DestID]) {
