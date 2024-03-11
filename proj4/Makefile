@@ -7,25 +7,25 @@ OBJ_DIR = ./obj
 TEST_SRC_DIR = ./testsrc
 
 CXXFLAGS = -std=c++17 -I $(INC_DIR) -g
-LDFLAGS = -pthread -lexpat -lgtest -lgtest_main
+LDFLAGS = -pthread -lexpat -lgmock -lgtest -lgtest_main
 MAKEFLAGS += --warn-undefined-variables
 
 all: directories runtests
 
-runtests: $(BIN_DIR)/teststrutils $(BIN_DIR)/teststrdatasource $(BIN_DIR)/teststrdatasink $(BIN_DIR)/testfiledatass $(BIN_DIR)/testdsv $(BIN_DIR)/testxml $(BIN_DIR)/testkml $(BIN_DIR)/testcsvbs $(BIN_DIR)/testosm $(BIN_DIR)/testdpr $(BIN_DIR)/testcsvbsi $(BIN_DIR)/testtp #$(BIN_DIR)/testcl
-	$(BIN_DIR)/teststrutils
-	$(BIN_DIR)/teststrdatasource
-	$(BIN_DIR)/teststrdatasink
-	$(BIN_DIR)/testfiledatass
-	$(BIN_DIR)/testdsv
-	$(BIN_DIR)/testxml
-	$(BIN_DIR)/testkml
-	$(BIN_DIR)/testcsvbs
-	$(BIN_DIR)/testosm
-	$(BIN_DIR)/testdpr
-	$(BIN_DIR)/testcsvbsi
-	$(BIN_DIR)/testtp
-#	$(BIN_DIR)/testcl
+runtests: $(BIN_DIR)/teststrutils $(BIN_DIR)/teststrdatasource $(BIN_DIR)/teststrdatasink $(BIN_DIR)/testfiledatass $(BIN_DIR)/testdsv $(BIN_DIR)/testxml $(BIN_DIR)/testkml $(BIN_DIR)/testcsvbs $(BIN_DIR)/testosm $(BIN_DIR)/testdpr $(BIN_DIR)/testcsvbsi $(BIN_DIR)/testtp $(BIN_DIR)/testcl
+	-$(BIN_DIR)/teststrutils
+	-$(BIN_DIR)/teststrdatasource
+	-$(BIN_DIR)/teststrdatasink
+	-$(BIN_DIR)/testfiledatass
+	-$(BIN_DIR)/testdsv
+	-$(BIN_DIR)/testxml
+	-$(BIN_DIR)/testkml
+	-$(BIN_DIR)/testcsvbs
+	-$(BIN_DIR)/testosm
+	-$(BIN_DIR)/testdpr
+	-$(BIN_DIR)/testcsvbsi
+	-$(BIN_DIR)/testtp
+	-$(BIN_DIR)/testcl
 	
 
 #strutils
@@ -167,6 +167,20 @@ $(OBJ_DIR)/DijkstraTransportationPlanner.o: $(SRC_DIR)/DijkstraTransportationPla
 
 $(OBJ_DIR)/CSVOSMTransportationPlannerTest.o: $(TEST_SRC_DIR)/CSVOSMTransportationPlannerTest.cpp $(INC_DIR)/DijkstraPathRouter.h $(INC_DIR)/XMLReader.h $(INC_DIR)/DSVReader.h $(INC_DIR)/StringUtils.h $(INC_DIR)/StringDataSource.h $(INC_DIR)/OpenStreetMap.h $(INC_DIR)/CSVBusSystem.h $(INC_DIR)/BusSystemIndexer.h $(INC_DIR)/TransportationPlannerConfig.h $(INC_DIR)/DijkstraTransportationPlanner.h $(INC_DIR)/TransportationPlanner.h $(INC_DIR)/GeographicUtils.h
 	$(CXX) -o $(OBJ_DIR)/CSVOSMTransportationPlannerTest.o -c $(CXXFLAGS) $(TEST_SRC_DIR)/CSVOSMTransportationPlannerTest.cpp
+
+#testcl
+$(BIN_DIR)/testcl: $(OBJ_DIR)/TransportationPlannerCommandLine.o $(OBJ_DIR)/TPCommandLineTest.o $(OBJ_DIR)/StringDataSink.o $(OBJ_DIR)/StringDataSource.o $(OBJ_DIR)/GeographicUtils.o
+	$(CXX) -o $(BIN_DIR)/testcl $(CXXFLAGS) $(OBJ_DIR)/TransportationPlannerCommandLine.o $(OBJ_DIR)/TPCommandLineTest.o $(OBJ_DIR)/StringDataSink.o $(OBJ_DIR)/StringDataSource.o $(OBJ_DIR)/GeographicUtils.o $(LDFLAGS)
+
+$(OBJ_DIR)/TransportationPlannerCommandLine.o: $(SRC_DIR)/TransportationPlannerCommandLine.cpp $(INC_DIR)/TransportationPlannerCommandLine.h $(INC_DIR)/TransportationPlanner.h $(INC_DIR)/GeographicUtils.h $(INC_DIR)/StreetMap.h $(INC_DIR)/BusSystem.h $(INC_DIR)/PathRouter.h $(INC_DIR)/StringDataSink.h $(INC_DIR)/StringDataSource.h
+	$(CXX) -o $(OBJ_DIR)/TransportationPlannerCommandLine.o -c $(CXXFLAGS) $(SRC_DIR)/TransportationPlannerCommandLine.cpp
+
+$(OBJ_DIR)/TPCommandLineTest.o: $(TEST_SRC_DIR)/TPCommandLineTest.cpp $(INC_DIR)/TransportationPlannerCommandLine.h $(INC_DIR)/StringDataSink.h $(INC_DIR)/StringDataSource.h
+	$(CXX) -o $(OBJ_DIR)/TPCommandLineTest.o -c $(CXXFLAGS) $(TEST_SRC_DIR)/TPCommandLineTest.cpp
+
+#testspeed
+#$(BIN_DIR)/speedtest: $(OBJ_DIR)/speedtest.o 
+
 
 clean:
 	rm -rf $(OBJ_DIR)

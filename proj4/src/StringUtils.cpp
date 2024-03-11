@@ -232,7 +232,11 @@ std::string ExpandTabs(const std::string &str, int tabsize) noexcept{
     for (size_t i = 0; i < str.length(); i++) {
         //when there is a tab, the spaces needed to the next tabstop is tabsize - count%tabsize
         if (str[i] == '\t') {
-            size_t remainder = tabsize - (count % tabsize); 
+            size_t remainder = 0;
+            if (tabsize != 0) {
+                remainder = tabsize - (count % tabsize); 
+            }
+             
             for (size_t j = 0; j < remainder; j++) {
                 newstr += " ";
                 count++; //increment count for outputted spaces
