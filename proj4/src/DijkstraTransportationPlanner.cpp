@@ -58,7 +58,6 @@ struct CDijkstraTransportationPlanner::SImplementation {
                 std::cout<<speed<<"speed: "<<std::endl;
             }
             for(size_t NodeIndex = 0; NodeIndex < Way->NodeCount(); NodeIndex++) { //go through nodes in each way
-            
                 std::cout<<"entering node loop: "<<std::endl;
                 auto PreviousNodeID = Way->GetNodeID(NodeIndex); 
                 auto NextNodeID = Way->GetNodeID(NodeIndex + 1);//get next node id 
@@ -69,7 +68,6 @@ struct CDijkstraTransportationPlanner::SImplementation {
                 std::cout<<"Prev vertex: "<<PreviousVertexID<<" next vertex "<<NextVertexID<<std::endl;
                 if(PreviousNode == nullptr) {std::cout<<"Previous Node null"<<std::endl; break;}
                 if(NextNode == nullptr) {std::cout<<"Next Node null"<<std::endl; break;}
-
                 auto stop = BusSystemIndexer.StopByNodeID(PreviousNodeID); 
                 BusSpeedLimits[PreviousNode->ID()] = speed;//store speed limit
                 double weightDist = SGeographicUtils::HaversineDistanceInMiles(PreviousNode->Location(), NextNode->Location());
@@ -110,7 +108,7 @@ struct CDijkstraTransportationPlanner::SImplementation {
                 double weightTime = distance/busspeed + (config->BusStopTime()/3600);
                 std::cout<<weightTime<<std::endl;
                 DFastestPathRouterWalkBus.AddEdge(PreviousVertexID, NextVertexID, weightTime, bidir);
-                TransportType[prevstop->NodeID()] = CTransportationPlanner::ETransportationMode::Bus;
+                TransportType[nextstop->NodeID()] = CTransportationPlanner::ETransportationMode::Bus;
                 std::cout<<"BusEdge added"<<std::endl;
             }
         }
@@ -151,17 +149,15 @@ struct CDijkstraTransportationPlanner::SImplementation {
         std::vector <CPathRouter::TVertexID> ShortestPathWalkBus;
         auto PreviousVertexID = DNodeToVertexID[src];
         auto NextVertexID  = DNodeToVertexID[dest];
-        
         auto TimeBike = DFastestPathRouterBike.FindShortestPath(PreviousVertexID, NextVertexID, ShortestPathBike);
+        std::cout<<"bike time: "<<TimeBike<<std::endl;
         auto TimeWalkBus = DFastestPathRouterWalkBus.FindShortestPath(PreviousVertexID, NextVertexID, ShortestPathWalkBus);
-
+        std::cout<<"bus time: "<<TimeWalkBus<<std::endl;
         CStreetMap::TNodeID nodeID;
         if(TimeBike < TimeWalkBus) {
             for(auto VertexID : ShortestPathBike) {
                 auto nodeSearch = DNodeToVertexID.find(VertexID);
-                if(nodeSearch != DNodeToVertexID.end()) {
-                    nodeID = nodeSearch->second;
-                }
+                if(nodeSearch != DNodeToVertexID.end()) {nodeID = nodeSearch->second;}
             auto nodepair = std::make_pair(CTransportationPlanner::ETransportationMode::Bike, nodeID);
             path.push_back(nodepair);
             }
@@ -185,7 +181,6 @@ struct CDijkstraTransportationPlanner::SImplementation {
     bool GetPathDescription(const std::vector< TTripStep > &path, std::vector< std::string > &desc) const {
         return true;
     }
-
 };
 
 CDijkstraTransportationPlanner::CDijkstraTransportationPlanner(std::shared_ptr<SConfiguration> config) {

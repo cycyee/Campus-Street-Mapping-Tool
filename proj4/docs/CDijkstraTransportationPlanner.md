@@ -36,5 +36,5 @@ The Walk/Bus one creates edges for walking all over the map along ways, and also
 
 It compares the fastest times from the biking vs the walk/bus methods, including information surrounding bus stop waiting times.The minimum is returned, and the associated vector is also returned. 
 
-
+The SImplementation iterates through all the vertices, passed in as nodes from the XML file, then iterates through the Ways, creating edges between each node in a way. It then iterates through all of the routes, read from the dsv reader, and attaches bus edges between stops along the routes. 
 

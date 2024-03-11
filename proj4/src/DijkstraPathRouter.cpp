@@ -26,12 +26,13 @@ struct CDijkstraPathRouter::SImplementation {
         }
         return std::any();
     }
-    bool AddEdge(TVertexID src, TVertexID dest, double weight, bool bidir = false) noexcept {
-        if((src < DVertices.size() && dest < DVertices.size()))  { //check for negative edge weight, check if IDs are in range of DVertices
-            std::cout<<"edge added: "<<weight<<src<< " to"<<dest <<std::endl;
+    bool AddEdge(TVertexID src, TVertexID dest, double weight, bool bidir) noexcept {
+        if((src < DVertices.size()) && (dest < DVertices.size()))  { //check for negative edge weight, check if IDs are in range of DVertices
+            std::cout<<"edge added: "<<weight<<" "<<src<< " to "<<dest <<std::endl;
             DVertices[src].DEdges.push_back(std::make_pair(weight, dest));
-            if(bidir) { //add directional edge in oppposite dir
-                DVertices[src].DEdges.push_back(std::make_pair(weight, src));
+            if(bidir == true) { //add directional edge in oppposite dir
+                DVertices[dest].DEdges.push_back(std::make_pair(weight, src));
+                std::cout<<"edge added: "<<weight<<" "<<dest<< " to "<<src<<std::endl;
             }
             return true;
         }
@@ -52,7 +53,7 @@ struct CDijkstraPathRouter::SImplementation {
         }
         //use a lambda to compare the actual distances instead of the id numbers
         //want them sorted by distances, so that the top of the heap is the closest distance possible, and opposite swapping for the longest
-        auto VertexCompare = [&Distances](TVertexID left, TVertexID right) {return Distances[left] < Distances[right];}; //use inequality to populate the min-heap
+        auto VertexCompare = [&Distances](TVertexID left, TVertexID right) {return Distances[left] > Distances[right];}; //use inequality to populate the min-heap
 
         Distances[src] = 0.0; //set distances = to 0
         PendingVertices.push_back(src);
@@ -68,12 +69,9 @@ struct CDijkstraPathRouter::SImplementation {
             //std::cout<<CurrentID<<std::endl;
             std::pop_heap(PendingVertices.begin(), PendingVertices.end());
             PendingVertices.pop_back(); //will get current id off the top of the heap, removes the shortest distance from pendingvertices
-            
             if(DVertices[CurrentID].DEdges.size() == 0){
-
                 return NoPathExists;
             }
-
             for(auto Edge : DVertices[CurrentID].DEdges) { //go through edges
                 auto EdgeWeight = Edge.first;
                 auto DestID = Edge.second;
