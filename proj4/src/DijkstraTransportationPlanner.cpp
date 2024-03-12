@@ -32,7 +32,7 @@ struct CDijkstraTransportationPlanner::SImplementation {
         if(DStreetMap == nullptr || DBusSystem == nullptr) {
             std::cout<<"Huge error"<<std::endl;
         }
-
+        std::cout<<"streetmap node count: "<<DStreetMap->NodeCount()<<std::endl;
         for(size_t Index = 0; Index < DStreetMap->NodeCount(); Index++) { //populate DNodeToVertexID + routers with vertices
             auto Node = DStreetMap->NodeByIndex(Index);
             std::cout<<"Node ID: "<<Node->ID()<<std::endl;
@@ -62,10 +62,13 @@ struct CDijkstraTransportationPlanner::SImplementation {
                 std::cout << "-------" << std::endl;
                 std::cout<<"entering node loop: "<<std::endl;
                 auto currentNodeID = way->GetNodeID(NodeIndex); 
-                auto nextNodeID = way->GetNodeID(NodeIndex + 1); 
+                auto nextNodeID = way->GetNodeID(NodeIndex + 1);
+
                 auto currentNode = DStreetMap->NodeByID(currentNodeID);
+                if(currentNode == nullptr) {std::cout<<"current node is null"<<std::endl; break;}
                 std::cout << "Current Node: " << currentNode->ID() << std::endl;
                 auto nextNode = DStreetMap->NodeByID(nextNodeID);
+                
                 if (nextNode == nullptr) {std::cout<<"Next Node null"<<std::endl; break;}
                 std::cout << "Next Node: " << nextNode->ID() << std::endl;
                 std::cout << "---" << std::endl;
@@ -154,6 +157,7 @@ struct CDijkstraTransportationPlanner::SImplementation {
                 auto currentStopID = route->GetStopID(routeIndex);
                 auto nextStopID = route->GetStopID(routeIndex + 1);
                 auto currentStop = DBusSystem->StopByID(currentStopID);
+                if(currentStop == nullptr) {std::cout<<" current stop is null"<<std::endl; break;}
                 std::cout << "Current Stop: " << currentStop->NodeID() << std::endl;
                 auto nextStop = DBusSystem->StopByID(nextStopID);
                 if (nextStop == nullptr) {std::cout<<"next stop is null"<<std::endl; break;}
@@ -169,6 +173,7 @@ struct CDijkstraTransportationPlanner::SImplementation {
                 }
 
                 bool bidir = BIDIR[currentStop->NodeID()];
+                std::cout<<"current id: "<<currentVertexID<<"next id: "<<nextVertexID<<std::endl;
                 double distance = DShortestPathRouter.FindShortestPath(currentVertexID, nextVertexID, path);
                 double weightTime = distance/busSpeed + (config->BusStopTime()/3600);
                 std::cout << "bus time:" << std::endl;
@@ -242,21 +247,21 @@ struct CDijkstraTransportationPlanner::SImplementation {
         
         auto TimeBike = DFastestPathRouterBike.FindShortestPath(PreviousVertexID, NextVertexID, ShortestPathBike);
         auto TimeWalkBus = DFastestPathRouterWalkBus.FindShortestPath(PreviousVertexID, NextVertexID, ShortestPathWalkBus);
-        std::cout << "Bike time:" << TimeBike << std::endl;
-        for (int i = 0; i < ShortestPathBike.size(); i++) {
-            std::cout << "Node: " << DVertexToNodeID[ShortestPathBike[i]] << " Transport: Bike" << std::endl;
-        }
-        std::cout << "Walk/bus time: " << TimeWalkBus << std::endl;
-        for (int i = 0; i < ShortestPathWalkBus.size(); i++) {
-            if (TransportType[DVertexToNodeID[ShortestPathBike[i]]] == 
-            CTransportationPlanner::ETransportationMode::Walk) {
-                std::cout << "Node: " << DVertexToNodeID[ShortestPathWalkBus[i]] << " Transport: Walk" <<std::endl;
-            }
-            else {
-                std::cout << "Node: " << DVertexToNodeID[ShortestPathWalkBus[i]] << " Transport: Bus" <<std::endl;
-            }
+        // std::cout << "Bike time:" << TimeBike << std::endl;
+        // for (int i = 0; i < ShortestPathBike.size(); i++) {
+        //     std::cout << "Node: " << DVertexToNodeID[ShortestPathBike[i]] << " Transport: Bike" << std::endl;
+        // }
+        //std::cout << "Walk/bus time: " << TimeWalkBus << std::endl;
+        //for (int i = 0; i < ShortestPathWalkBus.size(); i++) {
+            // if (TransportType[DVertexToNodeID[ShortestPathBike[i]]] == 
+            // CTransportationPlanner::ETransportationMode::Walk) {
+            //     std::cout << "Node: " << DVertexToNodeID[ShortestPathWalkBus[i]] << " Transport: Walk" <<std::endl;
+            // }
+            // else {
+            //     std::cout << "Node: " << DVertexToNodeID[ShortestPathWalkBus[i]] << " Transport: Bus" <<std::endl;
+            // }
             
-        }
+        //}
 
         if (TimeBike < TimeWalkBus) {
             for (int i = 0; i < ShortestPathBike.size(); i++) {

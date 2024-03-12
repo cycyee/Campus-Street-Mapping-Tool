@@ -26,7 +26,7 @@ double SGeographicUtils::HaversineDistanceInMiles(CStreetMap::TLocation loc1, CS
     return 2 * EarthRadiusMiles * Computation;
 }
 
-double SGeographicUtils::CalculateBearing(CStreetMap::TLocation src, CStreetMap::TLocation dest){
+double SGeographicUtils::CalculateBearing(CStreetMap::TLocation src, CStreetMap::TLocation dest) {
     double LatRad1 = DegreesToRadians(std::get<0>(src));
     double LatRad2 = DegreesToRadians(std::get<0>(dest));
     double LonRad1 = DegreesToRadians(std::get<1>(src));
