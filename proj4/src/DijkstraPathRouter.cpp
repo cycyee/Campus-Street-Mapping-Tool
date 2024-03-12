@@ -16,23 +16,23 @@ struct CDijkstraPathRouter::SImplementation {
         return DVertices.size();
     }
     TVertexID AddVertex(std::any tag) noexcept {
-        TVertexID NewVertexID = DVertices.size();
+        TVertexID NewVertexID = DVertices.size();//push vertex to DVertices
         DVertices.push_back({tag, {}});
         return NewVertexID;
     }
     std::any GetVertexTag(TVertexID id) const noexcept {
-        if(id < DVertices.size()) {
+        if(id < DVertices.size()) {//vertex tag in range
             return DVertices[id].DTag;
         }
-        return std::any();
+        return std::any();//tag of any type
     }
     bool AddEdge(TVertexID src, TVertexID dest, double weight, bool bidir) noexcept {
         if((src < DVertices.size()) && (dest < DVertices.size()))  { //check for negative edge weight, check if IDs are in range of DVertices
-            std::cout<<"edge added: "<<weight<<" "<<src<< " to "<<dest <<std::endl;
-            DVertices[src].DEdges.push_back(std::make_pair(weight, dest));
+            //std::cout<<"edge added: "<<weight<<" "<<src<< " to "<<dest <<std::endl;
+            DVertices[src].DEdges.push_back(std::make_pair(weight, dest));//opposite direction edge
             if(bidir == true) { //add directional edge in oppposite dir
                 DVertices[dest].DEdges.push_back(std::make_pair(weight, src));
-                std::cout<<"edge added: "<<weight<<" "<<dest<< " to "<<src<<std::endl;
+                //std::cout<<"edge added: "<<weight<<" "<<dest<< " to "<<src<<std::endl;
             }
             return true;
         }
@@ -47,7 +47,7 @@ struct CDijkstraPathRouter::SImplementation {
         std::vector < TVertexID > PendingVertices;
         std::vector < double > Distances(DVertices.size(), CPathRouter::NoPathExists);
         std::vector < TVertexID  > Previous(DVertices.size(), CPathRouter::InvalidVertexID);
-        if(DVertices.size()== 0) {
+        if(DVertices.size()== 0) {//empty map
             std::cout<<"why no vertices lil bro"<<std::endl;
             return NoPathExists;
         }
@@ -56,7 +56,7 @@ struct CDijkstraPathRouter::SImplementation {
         auto VertexCompare = [&Distances](TVertexID left, TVertexID right) {return Distances[left] > Distances[right];}; //use inequality to populate the min-heap
 
         Distances[src] = 0.0; //set distances = to 0
-        PendingVertices.push_back(src);
+        PendingVertices.push_back(src);//start with src
 
         while(!PendingVertices.empty()) {
             auto CurrentID = PendingVertices.front();
@@ -89,7 +89,7 @@ struct CDijkstraPathRouter::SImplementation {
                     Previous[DestID] = CurrentID;
                 }
             }
-            //re heapify
+            //re heapify using vertexcompare to create min-heap
             std::make_heap(PendingVertices.begin(), PendingVertices.end(), VertexCompare);
         }
         if(CPathRouter::NoPathExists == Distances[dest]) {
@@ -98,15 +98,16 @@ struct CDijkstraPathRouter::SImplementation {
         double PathDistance = Distances[dest];
         path.clear();
         path.push_back(dest);
-        do {
+        do {//iterate and reassign previous/dest
             dest = Previous[dest];
             path.push_back(dest);
         } while(dest != src);
-        std::reverse(path.begin(), path.end());
+        std::reverse(path.begin(), path.end());//reverse the travelled path
         return PathDistance;
     }
 };
 
+//defer all implementations
 CDijkstraPathRouter::CDijkstraPathRouter() {
     DImplementation = std::make_unique<SImplementation>();
 }

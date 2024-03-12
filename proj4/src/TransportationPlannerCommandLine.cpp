@@ -28,13 +28,14 @@ struct CTransportationPlannerCommandLine::SImplementation{
     SImplementation(std::shared_ptr<CDataSource> cmdsrc, std::shared_ptr<CDataSink> outsink, std::shared_ptr<CDataSink> errsink, std::shared_ptr<CDataFactory> results, std::shared_ptr<CTransportationPlanner> planner)
     : CmdSrc(std::move(cmdsrc)), OutSink(std::move(outsink)), ErrSink(std::move(errsink)), Results(std::move(results)), Planner(std::move(planner)) {
     }
-
+    //assign sources
     bool ProcessCommands() {
+        //char vectors to be applied to write()
         std::vector<char> outsinkV;
         std::vector<char> errsinkV;
         char ch;
         std::string line;
-        while(CmdSrc->Get(ch)) {
+        while(CmdSrc->Get(ch)) {//iterate through characters
             line += ch;
             if (line == "help") {
                 std::string str ="> "
@@ -51,55 +52,55 @@ struct CTransportationPlannerCommandLine::SImplementation{
                                "save     Saves the last calculated path to file\n"
                                "print    Prints the steps for the last calculated path\n"
                                "> ";             
-                for(size_t i = 0; i < str.length(); i++) {
+                for(size_t i = 0; i < str.length(); i++) {//fill vector
                     outsinkV.push_back(str[i]);
                 }
-                OutSink->Write(outsinkV);
-                outsinkV.clear();
+                OutSink->Write(outsinkV);//write
+                outsinkV.clear();//always clear vector after command is processed
                 line = "";
             }
-            if (line == "exit") {
+            if (line == "exit") {//exit is the only return true path
                 outsinkV.push_back('>');
                 outsinkV.push_back(' ');
                 OutSink->Write(outsinkV);
                 outsinkV.clear();
                 return true;
             }
-            if (line == "count") {
+            if (line == "count") {//get nodecount from planner
                 auto nodeCount = Planner->NodeCount();
                 std::string str = "> "+ std::to_string(nodeCount) + " nodes\n" "> ";
                 for (size_t i = 0; i < str.length(); i++) {
                     outsinkV.push_back(str[i]);
                 }
                 OutSink->Write(outsinkV);
-                outsinkV.clear();
+                outsinkV.clear();//clear vect
             }
             if (line == "node") {
                 std::string nodeid;
-                while(CmdSrc->Get(ch)){
+                while(CmdSrc->Get(ch)){//get remaining chars after "node" to see id
                     nodeid += ch;
                 }
-                if (nodeid == "") {
+                if (nodeid == "") {//empty id
                     std::string str = "Invalid node command, see help.\n";
                     for(size_t i = 0; i< str.size(); i++) {
                         errsinkV.push_back(str[i]);
                     }
                     ErrSink->Write(errsinkV);
                     errsinkV.clear();
-                    line = "";
+                    line = "";//reassign line and clear vects
                 }
                 else {
                     int IntNodeID;
                     try {
                         // Try converting the string to an integer
-                        IntNodeID = std::stoi(nodeid);
-                        auto node = Planner->SortedNodeByIndex(IntNodeID);
+                        IntNodeID = std::stoi(nodeid);//get node index into int
+                        auto node = Planner->SortedNodeByIndex(IntNodeID);//get node to get nodeid
                         std::string output = "> " "Node " + std::to_string(IntNodeID) + ": id = " + std::to_string(node->ID()) +
                                 " is at " + SGeographicUtils::ConvertLLToDMS(node->Location()) + "\n> ";
                         for (size_t i = 0; i < output.size(); i++) {
                             outsinkV.push_back(output[i]);
                         }
-                        OutSink->Write(outsinkV);
+                        OutSink->Write(outsinkV);//write, reassign  line, clear vect
                         outsinkV.clear();
                         line = "";
                     } 
@@ -128,41 +129,41 @@ struct CTransportationPlannerCommandLine::SImplementation{
                 } 
             }
 
-            if (line == "fastest") {
+            if (line == "fastest") {//get src dest ids in a big string
                 std::string fastids;
-                while(CmdSrc->Get(ch)){
+                while(CmdSrc->Get(ch)){//remainder of characters after "fastest"
                     fastids += ch;
                 }
                 if(fastids == "") {
-                    std::cout<<"shortids was empty"<<std::endl;
+                    //std::cout<<"shortids was empty"<<std::endl;  testing line
                     std::string str = "Invalid shortest command, see help.\n";
                     for(size_t i = 0; i< str.size(); i++) {
                         errsinkV.push_back(str[i]);
                     }
-                    ErrSink->Write(errsinkV);
+                    ErrSink->Write(errsinkV);//write error message
                     errsinkV.clear();
                     line = "";
                     return false;
                 }
-                std::vector<std::string> idvect = StringUtils::Split(fastids);
-                std::string Fnodeid1 = idvect[1];
+                std::vector<std::string> idvect = StringUtils::Split(fastids);//split to separate ids
+                std::string Fnodeid1 = idvect[1];//a space being passed to split as the first char means idvect[0] is empty
                 std::string Fnodeid2 = idvect[2];
-                std::cout<<"fnode 1: "<<Fnodeid1<<"fnode 2: "<<Fnodeid2<<std::endl;
+                //std::cout<<"fnode 1: "<<Fnodeid1<<"fnode 2: "<<Fnodeid2<<std::endl;
 
                 try{
                     std::vector <CTransportationPlanner::TTripStep> path;
-                    int IntNodeID1 = std::stoull(Fnodeid1);
+                    int IntNodeID1 = std::stoull(Fnodeid1);//stoull on nodeids
                     int IntNodeID2 = std::stoull(Fnodeid2);
-                    double Time = Planner->FindFastestPath(IntNodeID1, IntNodeID2, path);
-                    int hours = static_cast<int>(Time);
-                    double remainder = Time - hours;
-                    remainder *= 60;
-                    int minutes = static_cast<int>(remainder);
+                    double Time = Planner->FindFastestPath(IntNodeID1, IntNodeID2, path);//get time in hrs as double type
+                    int hours = static_cast<int>(Time);//truncate for hours
+                    double remainder = Time - hours;//get remainder as fraction
+                    remainder *= 60;//convert minutes
+                    int minutes = static_cast<int>(remainder);//truncate minutes
                     remainder = (remainder - minutes)*60;
-                    int seconds = static_cast<int>(remainder);
+                    int seconds = static_cast<int>(remainder);//get seconds
                     std::string str = "> Fastest path takes";
                     if(hours > 0){
-                        str += " " + std::to_string(hours) + " hr";
+                        str += " " + std::to_string(hours) + " hr";//write values in format
                     }
                     if(minutes > 0) {
                         str += " " + std::to_string(minutes) + " min";
@@ -177,7 +178,7 @@ struct CTransportationPlannerCommandLine::SImplementation{
                     OutSink->Write(outsinkV);
                     outsinkV.clear();
                 }
-                catch(const std::invalid_argument&) {
+                catch(const std::invalid_argument&) {//if something other than ids are passed
                     std::string err = "Invalid shortest parameter, see help.\n";
                     for(size_t i = 0; i< err.size(); i++) {
                         errsinkV.push_back(err[i]);
@@ -189,13 +190,13 @@ struct CTransportationPlannerCommandLine::SImplementation{
                 }
             }
 
-            if (line == "shortest") {
+            if (line == "shortest") {//shortest distance
                 std::string shortids;
-                while(CmdSrc->Get(ch)){
+                while(CmdSrc->Get(ch)){//remainder of str is the ids
                     shortids += ch;
                 }
                 if (shortids == "") {
-                    std::cout<<"shortids was empty"<<std::endl;
+                    //std::cout<<"shortids was empty"<<std::endl;
                     std::string str = "Invalid shortest command, see help.\n";
                     for(size_t i = 0; i< str.size(); i++) {
                         errsinkV.push_back(str[i]);
@@ -205,19 +206,19 @@ struct CTransportationPlannerCommandLine::SImplementation{
                     line = "";
                     return false;
                 }
-                std::vector<std::string> idvect = StringUtils::Split(shortids);
-                std::string nodeid1 = idvect[1];
+                std::vector<std::string> idvect = StringUtils::Split(shortids);//split up ids
+                std::string nodeid1 = idvect[1];//same as before, there is a space passed in
                 std::string nodeid2 = idvect[2];
-                std::cout<<"node 1: "<<nodeid1<<"node 2: "<<nodeid2<<std::endl;
+                //std::cout<<"node 1: "<<nodeid1<<"node 2: "<<nodeid2<<std::endl;
                 try{
                     std::vector <CTransportationPlanner::TNodeID> path;
                     int IntNodeID1 = std::stoull(nodeid1);
                     int IntNodeID2 = std::stoull(nodeid2);
-                    double distance = Planner->FindShortestPath(IntNodeID1, IntNodeID2, path);
+                    double distance = Planner->FindShortestPath(IntNodeID1, IntNodeID2, path); //find distance
                     std::stringstream ss;
-                    ss << std::fixed << std::setprecision(1) << distance;
+                    ss << std::fixed << std::setprecision(1) << distance;//truncate 
                     std::string dist = ss.str();
-                    std::string str = "> " "Shortest path is " + dist + " mi.\n" "> ";
+                    //std::string str = "> " "Shortest path is " + dist + " mi.\n" "> ";
                     for(size_t i = 0; i< str.size(); i++) {
                         outsinkV.push_back(str[i]);
                     }
@@ -230,7 +231,7 @@ struct CTransportationPlannerCommandLine::SImplementation{
                     for(size_t i = 0; i< err.size(); i++) {
                         errsinkV.push_back(err[i]);
                     }
-                    ErrSink->Write(errsinkV);
+                    ErrSink->Write(errsinkV);//write error 
                     errsinkV.clear();
                     return false;
                 }

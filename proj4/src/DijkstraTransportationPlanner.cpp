@@ -28,14 +28,14 @@ struct CDijkstraTransportationPlanner::SImplementation {
         DStreetMap = config->StreetMap();//pull map and busSystem from config
         DBusSystem = config->BusSystem();
         CBusSystemIndexer BusSystemIndexer(DBusSystem);
-
+        //check for null map or bus system (should never happen pretty much)
         if(DStreetMap == nullptr || DBusSystem == nullptr) {
             std::cout<<"Huge error"<<std::endl;
         }
-        std::cout<<"streetmap node count: "<<DStreetMap->NodeCount()<<std::endl;
+        //std::cout<<"streetmap node count: "<<DStreetMap->NodeCount()<<std::endl;      testing line
         for(size_t Index = 0; Index < DStreetMap->NodeCount(); Index++) { //populate DNodeToVertexID + routers with vertices
             auto Node = DStreetMap->NodeByIndex(Index);
-            std::cout<<"Node ID: "<<Node->ID()<<std::endl;
+            //std::cout<<"Node ID: "<<Node->ID()<<std::endl;        testing line
             auto VertexID = DShortestPathRouter.AddVertex(Node->ID());//add in vertex after getting it from streetmap
             DFastestPathRouterBike.AddVertex(Node->ID());//add vertices for fastest pathrouters too
             DFastestPathRouterWalkBus.AddVertex(Node->ID());
@@ -43,8 +43,8 @@ struct CDijkstraTransportationPlanner::SImplementation {
             DVertexToNodeID[VertexID] = Node->ID();
             NodeVect.push_back(Node->ID());
         }
-        std::sort(NodeVect.begin(), NodeVect.end());
-        std::cout<<"Way Count: "<<DStreetMap->WayCount()<<std::endl;
+        std::sort(NodeVect.begin(), NodeVect.end());//sort nodevect
+        //std::cout<<"Way Count: "<<DStreetMap->WayCount()<<std::endl;          testing line
         
         for(size_t Index = 0; Index < DStreetMap->WayCount(); Index++) { //iterate through ways
             auto way = DStreetMap->WayByIndex(Index);
@@ -54,50 +54,50 @@ struct CDijkstraTransportationPlanner::SImplementation {
             bool Bidirectional = way->GetAttribute("oneway") != "yes"; //decides if bidir flag is passed
             double speed = config->DefaultSpeedLimit();
             if(way->HasAttribute("maxspeed")) {
-                std::string str = way->GetAttribute("maxspeed").substr(0, way->GetAttribute("maxspeed").length() - 4);
-                speed = stod(str);               
+                std::string str = way->GetAttribute("maxspeed").substr(0, way->GetAttribute("maxspeed").length() - 4);//gets just the number part
+                speed = stod(str);         //string to double      
             }
 
             for(size_t NodeIndex = 0; NodeIndex < way->NodeCount(); NodeIndex++) { //go through nodes in each way
-                std::cout << "-------" << std::endl;
-                std::cout<<"entering node loop: "<<std::endl;
+                //std::cout << "-------" << std::endl;
+                //std::cout<<"entering node loop: "<<std::endl;     testing lines
                 auto currentNodeID = way->GetNodeID(NodeIndex); 
                 auto nextNodeID = way->GetNodeID(NodeIndex + 1);
 
                 auto currentNode = DStreetMap->NodeByID(currentNodeID);
-                if(currentNode == nullptr) {std::cout<<"current node is null"<<std::endl; break;}
-                std::cout << "Current Node: " << currentNode->ID() << std::endl;
+                if(currentNode == nullptr) {std::cout<<"current node is null"<<std::endl; break;} //null checks to solve segfaulting
+                //std::cout << "Current Node: " << currentNode->ID() << std::endl;      testing line
                 auto nextNode = DStreetMap->NodeByID(nextNodeID);
                 
-                if (nextNode == nullptr) {std::cout<<"Next Node null"<<std::endl; break;}
-                std::cout << "Next Node: " << nextNode->ID() << std::endl;
-                std::cout << "---" << std::endl;
+                if (nextNode == nullptr) {std::cout<<"Next Node null"<<std::endl; break;} //null check
+                //std::cout << "Next Node: " << nextNode->ID() << std::endl;
+                //std::cout << "---" << std::endl;          testing lines
                 
                 auto currentVertexID = DNodeToVertexID[currentNodeID];
                 auto nextVertexID = DNodeToVertexID[nextNodeID];
                 //std::cout << "Current Vertex ID: " << currentVertexID << std::endl;
                 //std::cout << "Next Vertex ID: " << nextVertexID << std::endl;
                    
-                double weightDist = SGeographicUtils::HaversineDistanceInMiles(currentNode->Location(), nextNode->Location());
-                double weightTimeWalk = weightDist/config->WalkSpeed();
+                double weightDist = SGeographicUtils::HaversineDistanceInMiles(currentNode->Location(), nextNode->Location());//get distance using geo utils fn
+                double weightTimeWalk = weightDist/config->WalkSpeed();//divide dist/speed = time
                 double weightTimeBike = weightDist/config->BikeSpeed();
-                std::cout << "Walk speed: " << config->WalkSpeed() << std::endl;
-                std::cout << "Bike speed: " << config->BikeSpeed() << std::endl;
-                std::cout << "Distance weight: " << weightDist << std::endl;
-                std::cout << "Time weight (walk): " << weightTimeWalk << std::endl;
-                std::cout << "Time weight (bike): " << weightTimeBike << std::endl;
+                // std::cout << "Walk speed: " << config->WalkSpeed() << std::endl;     testing lines
+                // std::cout << "Bike speed: " << config->BikeSpeed() << std::endl;
+                // std::cout << "Distance weight: " << weightDist << std::endl;
+                // std::cout << "Time weight (walk): " << weightTimeWalk << std::endl;
+                // std::cout << "Time weight (bike): " << weightTimeBike << std::endl;
 
-                BusSpeedLimits[currentNodeID] = speed; 
+                BusSpeedLimits[currentNodeID] = speed; //set speed limit for later, bidir for later, transport type for later
                 BIDIR[currentNodeID] = Bidirectional;
-                TransportType[currentNodeID] = CTransportationPlanner::ETransportationMode::Walk;
+                TransportType[currentNodeID] = CTransportationPlanner::ETransportationMode::Walk;//default all walk
 
-                std::cout << "dist:" << std::endl;
+                //std::cout << "dist:" << std::endl;
                 DShortestPathRouter.AddEdge(currentVertexID, nextVertexID, weightDist, Bidirectional);
-                std::cout << "walk time:" << std::endl;
-                DFastestPathRouterWalkBus.AddEdge(currentVertexID, nextVertexID, weightTimeWalk, Bidirectional);
+                //std::cout << "walk time:" << std::endl;
+                DFastestPathRouterWalkBus.AddEdge(currentVertexID, nextVertexID, weightTimeWalk, Bidirectional); //add walking edge everywhere
                 if(Bikable == true) {//bikable edge always bidirectional
-                    std::cout << "bike time:" << std::endl;
-                    DFastestPathRouterBike.AddEdge(currentVertexID, nextVertexID, weightTimeBike, true);
+                    //std::cout << "bike time:" << std::endl;
+                    DFastestPathRouterBike.AddEdge(currentVertexID, nextVertexID, weightTimeBike, true); //only add edge if bikable
                 }
                 
 
@@ -147,36 +147,36 @@ struct CDijkstraTransportationPlanner::SImplementation {
                 */
             }
         }
-
+        //loop through routes/stops
         for(size_t index = 0; index < DBusSystem->RouteCount(); index ++) {
-            std::cout<<"entering route loop: "<<std::endl;
+            //std::cout<<"entering route loop: "<<std::endl;
             auto route = DBusSystem->RouteByIndex(index);
-            std::cout << "Nodes in route: " << route->StopCount() <<std::endl;
+            //std::cout << "Nodes in route: " << route->StopCount() <<std::endl;
             std::vector<CPathRouter::TVertexID> path;
-            for (size_t routeIndex = 0; routeIndex < route->StopCount(); routeIndex++) {
+            for (size_t routeIndex = 0; routeIndex < route->StopCount(); routeIndex++) {//get current and next stops
                 auto currentStopID = route->GetStopID(routeIndex);
                 auto nextStopID = route->GetStopID(routeIndex + 1);
                 auto currentStop = DBusSystem->StopByID(currentStopID);
-                if(currentStop == nullptr) {std::cout<<" current stop is null"<<std::endl; break;}
-                std::cout << "Current Stop: " << currentStop->NodeID() << std::endl;
+                if(currentStop == nullptr) {std::cout<<" current stop is null"<<std::endl; break;} //null check
+                //std::cout << "Current Stop: " << currentStop->NodeID() << std::endl;
                 auto nextStop = DBusSystem->StopByID(nextStopID);
-                if (nextStop == nullptr) {std::cout<<"next stop is null"<<std::endl; break;}
-                std::cout << "Next Stop: " << nextStop->NodeID() << std::endl;
+                if (nextStop == nullptr) {std::cout<<"next stop is null"<<std::endl; break;} //null check
+                //std::cout << "Next Stop: " << nextStop->NodeID() << std::endl;
 
-                auto currentVertexID = DNodeToVertexID[currentStop->NodeID()];
+                auto currentVertexID = DNodeToVertexID[currentStop->NodeID()];//get vertex ids
                 auto nextVertexID = DNodeToVertexID[nextStop->NodeID()];
 
-                auto search = BusSpeedLimits.find(currentStop->NodeID());
+                auto search = BusSpeedLimits.find(currentStop->NodeID());//search through bus speed limits
                 double busSpeed = config->DefaultSpeedLimit();
                 if (search != BusSpeedLimits.end()) {
-                    busSpeed = search->second;
+                    busSpeed = search->second;//if non-default found, update bus speed 
                 }
 
-                bool bidir = BIDIR[currentStop->NodeID()];
-                std::cout<<"current id: "<<currentVertexID<<"next id: "<<nextVertexID<<std::endl;
+                bool bidir = BIDIR[currentStop->NodeID()];//pull directionality from 
+                //std::cout<<"current id: "<<currentVertexID<<"next id: "<<nextVertexID<<std::endl;
                 double distance = DShortestPathRouter.FindShortestPath(currentVertexID, nextVertexID, path);
                 double weightTime = distance/busSpeed + (config->BusStopTime()/3600);
-                std::cout << "bus time:" << std::endl;
+                //std::cout << "bus time:" << std::endl;
                 DFastestPathRouterWalkBus.AddEdge(currentVertexID, nextVertexID, weightTime, false);
                 TransportType[nextStop->NodeID()] = CTransportationPlanner::ETransportationMode::Bus;
             }

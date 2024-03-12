@@ -26,7 +26,7 @@ struct CBusSystemIndexer::SImplementation{
         }
     };
 
-
+    //containers for sorting and lookup
     std::shared_ptr<CBusSystem> DBusSystem;
     std::vector <std::shared_ptr<SStop> >DSortedStops;
     std::vector <std::shared_ptr<SRoute>> DSortedRoutes;
@@ -35,7 +35,7 @@ struct CBusSystemIndexer::SImplementation{
 
     static bool StopIDCompare (std::shared_ptr<SStop> left, std::shared_ptr<SStop> right) {
         return left->ID() < right->ID();
-    }
+    }//compare stop ids
 
     SImplementation(std::shared_ptr<CBusSystem> bussystem) {
         DBusSystem = bussystem;
@@ -77,14 +77,14 @@ struct CBusSystemIndexer::SImplementation{
         if(index < DSortedStops.size()) {
             return DSortedStops[index];
         }
-        return nullptr;
+        return nullptr;//null if search fails 
     }
 
     std::shared_ptr<SRoute> SortedRouteByIndex(std::size_t index) const noexcept{//routes are pre-sorted via the std::sort in Simplementation
         if(index < DSortedRoutes.size()) {//searchable by index
             return DSortedRoutes[index];
         }
-        return nullptr;
+        return nullptr;//null if search fails
     }
     std::shared_ptr<SStop> StopByNodeID(TNodeID id) const noexcept{
         //searches through DNodeIDToStop to find the stop
@@ -92,7 +92,7 @@ struct CBusSystemIndexer::SImplementation{
         if(Search!= DNodeIDToStop.end()) {
             return Search->second;
         }
-        return nullptr;
+        return nullptr;//null if search fails
 
     }
     bool RoutesByNodeIDs(TNodeID src, TNodeID dest, std::unordered_set<std::shared_ptr<SRoute> > &routes) const noexcept{
@@ -102,7 +102,7 @@ struct CBusSystemIndexer::SImplementation{
             routes = Search->second;
             return true;
         }
-        return false;
+        return false;//false if search fails
     }
 
     bool RouteBetweenNodeIDs(TNodeID src, TNodeID dest) const noexcept{
