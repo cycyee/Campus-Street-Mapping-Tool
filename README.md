@@ -1,8 +1,8 @@
-Campus Mapping Tool
+# Mapping Tool
 
 The Campus Mapping Tool is a project developed in C++ and Python aimed at providing efficient navigation solutions within a college campus environment. The tool incorporates custom XML and CSV file parsers designed from scratch to process location data and bus stop information specific to the college town.
 
-Key Features:
+## Key Features:
 
 Custom File Parsers: The project includes custom parsers for XML and CSV files to extract and process location data and bus stop information relevant to the college campus.
 
